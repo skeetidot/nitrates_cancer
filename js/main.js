@@ -1,75 +1,59 @@
-// DECLARE MAP IN GLOBAL SCOPE
+// Declare the map in global scope
 var map;
 
-// DECLARE DEFAULT OPACITY IN GLOBAL SCOPE
-var currentOpacity = 1;
 
-var sheetBoundaries;
-var currentAddress;
-var searchResultMarker;
+// Declare basemaps in global scope
 
-// DECLARE GLOBAL VARIABLES FOR GEOCODING
-var arcgisOnline = L.esri.Geocoding.arcgisOnlineProvider();
-var geocodeService = L.esri.Geocoding.geocodeService();
-
-
-// DECLARE BASEMAPS IN GLOBAL SCOPE
-
-// GREY BASEMAP
+// Esri Light Gray Canvas Basemap
 var Esri_WorldGrayCanvas = L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 16
 });
 
-// GREY BASEMAP LABELS
+// Esri Light Gray Canvas Basemap Labels
 var Esri_WorldGrayReference = L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Reference/MapServer/tile/{z}/{y}/{x}', {
     maxZoom: 16
 });
 
 
-// SET THE MAP OPTIONS
+// Initialize layers in global scope
+var wellPointsLayerGroup = L.layerGroup();
+var censusTractsLayerGroup = L.layerGroup();
+
+// Initialize an array to store the well point coordinates
+var wellPointsFeatureCollection = [];
+
+
+// Set the map options
 var mapOptions = {
     center: [44.437778, -90.130186], // centered in central Wisconsin
     zoom: 7,
     minZoom: 7,
     maxZoom: 17,
     maxBounds: L.latLngBounds([40.822448, -80.120168], [48.628936, -100.325876]), // panning bounds so the user doesn't pan too far away from Wisconsin
-    bounceAtZoomLimits: false // Set it to false if you don't want the map to zoom beyond min/max zoom and then bounce back when pinch-zooming
-    //layers: [Esri_WorldGrayCanvas, sanborn], // Set the layers to build into the layer control
+    bounceAtZoomLimits: false, // Set it to false if you don't want the map to zoom beyond min/max zoom and then bounce back when pinch-zooming
+    layers: [Esri_WorldGrayCanvas, wellPointsLayerGroup, censusTractsLayerGroup] // Set the layers to build into the layer control
 }
 
 
-// CREATE A NEW LEAFLET MAP WITH THE MAP OPTIONS
+// Create a new Leaflet map with the map options
 var map = L.map('map', mapOptions);
 
 
-// ADD THE ZOOM CONTROL IN THE BOTTOM RIGHT CORNER
-map.zoomControl.setPosition('bottomright');
+// Add the zoom control in the top left corner
+map.zoomControl.setPosition('topleft');
 
 
-// SET THE BASEMAP
-// ONLY INCULDE ONE BASEMAP SO IT IS NOT PART OF THE LAYER LIST
-var baseMaps = {
-    "Grayscale": Esri_WorldGrayCanvas
-};
-
-// SET THE OVERLAYS
-//var overlayMaps = {
-//    "1910 Sanborn Maps": sanborn
-//    // We can add the landmarks layer here when it is ready
-//};
-
-// ADD THE LAYER CONTROL TO THE MAP
-//var toggleControls = L.control.layers(baseMaps, overlayMaps,
-//    {
-//    collapsed: false // Keep the layer list open
-//}).addTo(map);
-
-
-/********************************************************************************/
-/* CALL GET DATA FUNCTION */
+// Call the get data function to retrieve the data and place it on the map
 getData(map);
 
 
+// Call the build layer list function
+buildLayerList();
+
+
+
+
+/********************************************************************************/
 // FUNCTION TO RETRIEVE DATA AND PLACE IT ON THE MAP (:
 function getData(map) {
 
@@ -103,32 +87,31 @@ function getData(map) {
                     buildPopupContent(feature, layer, e);
                 });
             }
-        }).addTo(map);
-        
+        }).addTo(censusTractsLayerGroup);
+
         //console.log(censusTracts);
-        
+
         // Move the census tracts to the bottom of the layer order
-        censusTracts.bringToBack();        
+        censusTracts.bringToBack();
 
     });
 
 
-
-	/********************************************************************************/
-	/* POPULATE THE POPUP USING ATTRIBUTES FROM THE GEOJSON BOUNDARY DATA */
+    /********************************************************************************/
+    /* POPULATE THE POPUP USING ATTRIBUTES FROM THE GEOJSON BOUNDARY DATA */
     function buildPopupContent(feature, layer, e) {
 
-        
-		/********************************************************************************/        
-		/* GET THE FEATURES FROM THE GEOJSON AND ADD TO A POPUP */
+
+        /********************************************************************************/
+        /* GET THE FEATURES FROM THE GEOJSON AND ADD TO A POPUP */
         var cancerRate = "<div class= 'item-key'><b>Cancer Rate:</b></div> <div class='item-value'>" + feature.properties['canrate'] + "</div>";
-		
+
         /* PUSH INFO TO POPUP USING RESPONSIVE POPUP PLUGIN SO THAT POPUPS ARE CENTERED ON MOBILE
         EVALUATE EFFICACY OF THIS PLUGIN -- IS THERE SOMETHING MORE EFFECTIVE OUT THERE? */
-        var popup = cancerRate;	
+        var popup = cancerRate;
         censusTracts.bindPopup(popup).openPopup();
     }
-    
+
 
     /********************************************************************************/
     // USE JQUERY'S GETJSON() METHOD TO LOAD THE WELL POINTS AND NITRATE RATE DATA ASYNCHRONOUSLY
@@ -138,12 +121,12 @@ function getData(map) {
         wellPoints = L.geoJson(data, {
 
             // CREATE STYLING FOR THE WELL POINTS LAYER
-            pointToLayer: function(feature, latlng) {
+            pointToLayer: function (feature, latlng) {
                 return L.circleMarker(latlng, {
                     fillColor: 'gray',
                     fillOpacity: 1,
                     color: 'black',
-                    weight: 1.25,
+                    weight: 0.75,
                     opacity: 1,
                     radius: 3
                 });
@@ -156,14 +139,87 @@ function getData(map) {
                     //buildPopupContent(feature, layer, e);
                 });
             }
-        }).addTo(map);
+        }).addTo(wellPointsLayerGroup);
+
         
-        //wellPoints.bringToFront();
+        /********************************************************************************/
+        // BUILD A TURF FEATURE COLLECTION FROM THE WELL POINTS
+        
+        // Loop through each feature in the wellPoints GeoJson layer
+        wellPoints.eachLayer(function (layer) {
+
+            // Create a shorthand variable to access the layer properties
+            var props = layer.feature.properties;
+
+            // Get the latitude and longitude for the feature and put them into an array
+            var lat = layer.getLatLng().lat;
+            var lng = layer.getLatLng().lng;
+            var latlngArray = [lat, lng];
+            
+            // Create a turf point feature from the lat/long array
+            wellPointsFeature = turf.point(latlngArray);
+            console.log(wellPointsFeature);
+            
+            // Push the current well point feature into an array
+            wellPointsFeatureCollection.push(wellPointsFeature);   
+            
+        });       
+        
+        // Create a turf feature collection variable from the array of turf well points
+        var features = turf.featureCollection(wellPointsFeatureCollection);
+        
+        // Get the center point of the well point features
+        var center = turf.center(features);          
+        console.log(center);
 
 
+//        var points = turf.randomPoint(30, {
+//            bbox: [50, 30, 70, 50]
+//        });
+//
+//        // add a random property to each point
+//        turf.featureEach(points, function (point) {
+//            point.properties.solRad = Math.random() * 50;
+//        });
+//        var options = {
+//            gridType: 'points',
+//            property: 'solRad',
+//            units: 'miles'
+//        };
+//        var grid = turf.interpolate(points, 100, options);
+//        //console.log(grid);          
+//
+//        //wellPoints.bringToFront();
     });
- 
-	
 
-    // BRACKET CLOSING THE GETDATA FUNCTION
+
+
+
+
+}
+// End of the getData function
+
+
+// Function to build the layer list
+function buildLayerList() {
+
+    // Set the basemap
+    // Only include one basemap so it is not part of the layer list
+    var baseMaps = {
+        "Grayscale": Esri_WorldGrayCanvas
+    };
+
+    // Set the overlays
+    var overlays = {
+        "Well Points": wellPointsLayerGroup,
+        "Census Tracts": censusTractsLayerGroup
+        // Add other layers here when they are ready
+    };
+
+    // Add the layer control to the map
+    var layerList = L.control.layers(baseMaps, overlays, {
+        collapsed: false, // Keep the layer list open
+        autoZIndex: true, // Assign zIndexes in increasing order to all of its layers so that the order is preserved when switching them on/off
+        hideSingleBase: true // Hide the base layers section when there is only one layer
+    }).addTo(map);
 }

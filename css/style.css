@@ -28,11 +28,6 @@ body {
     margin: 0;
 }
 
-#opacity-slider {
-    touch-action: auto;
-    -ms-touch-action: auto;
-}
-
 
 
 /**********************************************************************/
@@ -386,18 +381,9 @@ h4 {
 
 .leaflet-top {
     position: absolute;
-    margin-top: 7.2em;
+/*    margin-top: 7.2em;*/   /* If there is a header, this pushes all the leaflet controls down */
     z-index: 1000;
 }
-
-
-/* GETS RID OF BASE LAYER CONTROLS */
-
-.leaflet-control-layers-base,
-.leaflet-control-layers-separator {
-    display: none;
-}
-
 
 .leaflet-touch .leaflet-control-layers {
     width: 200px;
