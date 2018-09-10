@@ -178,15 +178,10 @@ function getData(map) {
         //        var center = turf.center(features);
         //        console.log(center);
 
+        // Call the function to interpolate nitrate rates and generate a hexbin surface
         interpolateNitrateRates(features);
 
-
-
-        //wellPoints.bringToFront();
     });
-
-
-
 
 
 }
@@ -217,19 +212,22 @@ function buildLayerList() {
     }).addTo(map);
 }
 
-// Function to interpolate the nitrate rates from the well points into a hexbin surface
+// Function to interpolate the nitrate rates from the well points into a hexbin surface (http://turfjs.org/docs#interpolate)
 function interpolateNitrateRates(features) {
     
     // Set options for the well point interpolation
     var options = {
         gridType: 'hex',        // use hexbins as the grid type
         property: 'nitr_ran',   // interpolate values from the nitrate ranges
-        units: 'kilometers'     // hexbin size units
+        units: 'kilometers',    // hexbin size units
+        weight: 2               // distance decay coefficient, q
     };
     
-    // Interpolate the 
+    // Interpolate the well point features using a 10 sq km grid size and the options just specified
     var nitrateRatesHexbins = turf.interpolate(features, 10, options);
     //console.log(nitrateRatesHexbins);
+    
+    // Use Simple Statistics to symbolize hexbins by natural breaks (jenks)
 
     // Convert the hexbins to a Leaflet GeoJson layer and add it to the map
     L.geoJson(nitrateRatesHexbins).addTo(map);
