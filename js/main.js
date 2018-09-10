@@ -15,13 +15,18 @@ var Esri_WorldGrayReference = L.tileLayer('https://services.arcgisonline.com/arc
 });
 
 
-// Initialize layers in global scope
+// Initialize layers in global scope, to include them in the layer list
 var wellPointsLayerGroup = L.layerGroup();
-var censusTractsLayerGroup = L.layerGroup();
+    censusTractsLayerGroup = L.layerGroup();
+    nitrateRatesIDWLayerGroup = L.layerGroup();
+    cancerRatesIDWLayerGroup = L.layerGroup();
 
 
-// Initialize an array to store the well points
+// Initialize arrays to store the well points, census tracts, interpolated nitrate rates, and interpolated cancer rates
 var wellPointsArray = [];
+    censusTractsArray = [];
+    interpolatedNitrateRatesArray = [];
+    interpolatedCancerRatesArray = [];
 
 
 // Set the map options
@@ -32,7 +37,7 @@ var mapOptions = {
     maxZoom: 17,
     maxBounds: L.latLngBounds([40.822448, -80.120168], [48.628936, -100.325876]), // panning bounds so the user doesn't pan too far away from Wisconsin
     bounceAtZoomLimits: false, // Set it to false if you don't want the map to zoom beyond min/max zoom and then bounce back when pinch-zooming
-    layers: [Esri_WorldGrayCanvas, wellPointsLayerGroup, censusTractsLayerGroup] // Set the layers to build into the layer control
+    layers: [Esri_WorldGrayCanvas, wellPointsLayerGroup, censusTractsLayerGroup, nitrateRatesIDWLayerGroup, cancerRatesIDWLayerGroup] // Set the layers to build into the layer control
 }
 
 
@@ -89,6 +94,54 @@ function getData(map) {
                 });
             }
         }).addTo(censusTractsLayerGroup);
+        
+        
+        /********************************************************************************/
+        // BUILD A TURF FEATURE COLLECTION FROM THE CENSUS TRACTS
+
+        // Loop through each feature in the censusTracts GeoJson layer
+        censusTracts.eachLayer(function (layer) {
+
+            // Create shorthand variable to access the layer properties and coordinates
+            var props = layer.feature.properties;
+            var coordinates = layer.feature.geometry.coordinates;
+           
+//            console.log("Census Tract Coordinates:")
+//            console.log(coordinates);
+            
+            // Create a turf polygon feature for the census tract, with its coordinates and attributes
+            censusTractsFeature = turf.polygon(coordinates, props);
+            //console.log(censusTractsFeature);            
+            
+            // Get the centroid of the census tract
+            var censusTractsFeatureCentroid = turf.centroid(censusTractsFeature, props);
+            //console.log(censusTractsFeatureCentroid);            
+
+            // Push the current census tract centroid into an array
+            censusTractsArray.push(censusTractsFeatureCentroid);
+
+            //            // Buffer the well points by 5 miles
+            //            var buffer = turf.buffer(wellPointsFeature, 5, {
+            //                units: 'miles'
+            //            });
+            //
+            //            // Convert the buffers to a Leaflet GeoJson layer and add it to the map
+            //            L.geoJson(buffer).addTo(map);
+
+        });
+
+        // Create a turf feature collection from the array of census tract centroid features
+        var features = turf.featureCollection(censusTractsArray);
+        console.log("Census Tract Centroids Feature Collection:");
+        console.log(features);
+
+        //        // Get the center point of the well point features
+        //        var center = turf.center(censusTractsFeature);
+        //        console.log(center);
+
+        
+        // Call the function to interpolate cancer rates and generate a hexbin surface
+        interpolateCancerRates(features);         
 
         //console.log(censusTracts);
 
@@ -111,11 +164,12 @@ function getData(map) {
         EVALUATE EFFICACY OF THIS PLUGIN -- IS THERE SOMETHING MORE EFFECTIVE OUT THERE? */
         var popup = cancerRate;
         censusTracts.bindPopup(popup).openPopup();
+                   
     }
 
 
     /********************************************************************************/
-    // USE JQUERY'S GETJSON() METHOD TO LOAD THE WELL POINTS AND NITRATE RATE DATA ASYNCHRONOUSLY
+    // USE JQUERY'S GETJSON() METHOD TO LOAD THE WELL POINTS AND NITRATE RATES ASYNCHRONOUSLY
     $.getJSON("data/well_nitrate.json", function (data) {
 
         // CREATE A LEAFLET GEOJSON LAYER FOR THE WELL POINTS WITH POPUPS AND ADD TO THE MAP
@@ -153,7 +207,7 @@ function getData(map) {
             var props = layer.feature.properties;
             var coordinates = layer.feature.geometry.coordinates;
 
-            // Create a turf point feature from the lat/long array
+            // Create a turf point feature for the well point, with its coordinates and attributes
             wellPointsFeature = turf.point(coordinates, props);
             //console.log(wellPointsFeature);
 
@@ -170,8 +224,9 @@ function getData(map) {
 
         });
 
-        // Create a turf feature collection variable from the array of turf well points
+        // Create a turf feature collection from the array of well point features
         var features = turf.featureCollection(wellPointsArray);
+        console.log("Well Points Feature Collection:");
         console.log(features);
 
         //        // Get the center point of the well point features
@@ -179,7 +234,7 @@ function getData(map) {
         //        console.log(center);
 
         // Call the function to interpolate nitrate rates and generate a hexbin surface
-        interpolateNitrateRates(features);
+        interpolateNitrateRates(features);    
 
     });
 
@@ -200,7 +255,9 @@ function buildLayerList() {
     // Set the overlays
     var overlays = {
         "Well Points": wellPointsLayerGroup,
-        "Census Tracts": censusTractsLayerGroup
+        "Census Tracts": censusTractsLayerGroup,
+        "Nitrate Concentrations": nitrateRatesIDWLayerGroup,
+        "Cancer Rates": cancerRatesIDWLayerGroup
         // Add other layers here when they are ready
     };
 
@@ -225,10 +282,50 @@ function interpolateNitrateRates(features) {
     
     // Interpolate the well point features using a 10 sq km grid size and the options just specified
     var nitrateRatesHexbins = turf.interpolate(features, 10, options);
-    //console.log(nitrateRatesHexbins);
     
-    // Use Simple Statistics to symbolize hexbins by natural breaks (jenks)
+    // Loop through each hexbin and get its interpolated nitrate concentration
+    for (var hexbin in nitrateRatesHexbins.features) {
+        var interpolatedNitrateRate = nitrateRatesHexbins.features[hexbin].properties.nitr_ran;
+        interpolatedNitrateRatesArray.push(interpolatedNitrateRate);
+        //console.log(nitrateRatesHexbins.features[hexbin].properties.nitr_ran);
+        
+        // Use Simple Statistics to symbolize hexbins by natural breaks (jenks)
+    }
+    
+    console.log(interpolatedNitrateRatesArray);
+    
+
 
     // Convert the hexbins to a Leaflet GeoJson layer and add it to the map
-    L.geoJson(nitrateRatesHexbins).addTo(map);
+    L.geoJson(nitrateRatesHexbins).addTo(nitrateRatesIDWLayerGroup);
+}
+
+// Function to interpolate the cancer rates from the census tracts into a hexbin surface (http://turfjs.org/docs#interpolate)
+function interpolateCancerRates(features) {
+    
+    // Set options for the cancer rate interpolation
+    var options = {
+        gridType: 'hex',        // use hexbins as the grid type
+        property: 'canrate',    // interpolate values from the cancer rates
+        units: 'kilometers',    // hexbin size units
+        weight: 2               // distance decay coefficient, q
+    };
+    
+    // Interpolate the census tract features using a 10 sq km grid size and the options just specified
+    var cancerRatesHexbins = turf.interpolate(features, 10, options);
+    //console.log(nitrateRatesHexbins);
+    
+    // Loop through each hexbin and get its interpolated cancer rate
+    for (var hexbin in cancerRatesHexbins.features) {
+        var interpolatedCancerRate = cancerRatesHexbins.features[hexbin].properties.canrate;
+        interpolatedCancerRatesArray.push(interpolatedCancerRate);
+        //console.log(cancerRatesHexbins.features[hexbin].properties.canrate);
+        
+        // Use Simple Statistics to symbolize hexbins by natural breaks (jenks)
+    }
+    
+    console.log(interpolatedCancerRatesArray);    
+
+    // Convert the hexbins to a Leaflet GeoJson layer and add it to the map
+    L.geoJson(cancerRatesHexbins).addTo(cancerRatesIDWLayerGroup);
 }
