@@ -19,8 +19,9 @@ var Esri_WorldGrayReference = L.tileLayer('https://services.arcgisonline.com/arc
 var wellPointsLayerGroup = L.layerGroup();
 var censusTractsLayerGroup = L.layerGroup();
 
-// Initialize an array to store the well point coordinates
-var wellPointsFeatureCollection = [];
+
+// Initialize an array to store the well points
+var wellPointsArray = [];
 
 
 // Set the map options
@@ -141,55 +142,47 @@ function getData(map) {
             }
         }).addTo(wellPointsLayerGroup);
 
-        
+
         /********************************************************************************/
         // BUILD A TURF FEATURE COLLECTION FROM THE WELL POINTS
-        
+
         // Loop through each feature in the wellPoints GeoJson layer
         wellPoints.eachLayer(function (layer) {
 
-            // Create a shorthand variable to access the layer properties
+            // Create shorthand variable to access the layer properties and coordinates
             var props = layer.feature.properties;
+            var coordinates = layer.feature.geometry.coordinates;
 
-            // Get the latitude and longitude for the feature and put them into an array
-            var lat = layer.getLatLng().lat;
-            var lng = layer.getLatLng().lng;
-            var latlngArray = [lat, lng];
-            
             // Create a turf point feature from the lat/long array
-            wellPointsFeature = turf.point(latlngArray);
-            console.log(wellPointsFeature);
-            
+            wellPointsFeature = turf.point(coordinates, props);
+            //console.log(wellPointsFeature);
+
             // Push the current well point feature into an array
-            wellPointsFeatureCollection.push(wellPointsFeature);   
-            
-        });       
-        
+            wellPointsArray.push(wellPointsFeature);
+
+            //            // Buffer the well points by 5 miles
+            //            var buffer = turf.buffer(wellPointsFeature, 5, {
+            //                units: 'miles'
+            //            });
+            //
+            //            // Convert the buffers to a Leaflet GeoJson layer and add it to the map
+            //            L.geoJson(buffer).addTo(map);
+
+        });
+
         // Create a turf feature collection variable from the array of turf well points
-        var features = turf.featureCollection(wellPointsFeatureCollection);
-        
-        // Get the center point of the well point features
-        var center = turf.center(features);          
-        console.log(center);
+        var features = turf.featureCollection(wellPointsArray);
+        console.log(features);
+
+        //        // Get the center point of the well point features
+        //        var center = turf.center(features);
+        //        console.log(center);
+
+        interpolateNitrateRates(features);
 
 
-//        var points = turf.randomPoint(30, {
-//            bbox: [50, 30, 70, 50]
-//        });
-//
-//        // add a random property to each point
-//        turf.featureEach(points, function (point) {
-//            point.properties.solRad = Math.random() * 50;
-//        });
-//        var options = {
-//            gridType: 'points',
-//            property: 'solRad',
-//            units: 'miles'
-//        };
-//        var grid = turf.interpolate(points, 100, options);
-//        //console.log(grid);          
-//
-//        //wellPoints.bringToFront();
+
+        //wellPoints.bringToFront();
     });
 
 
@@ -222,4 +215,22 @@ function buildLayerList() {
         autoZIndex: true, // Assign zIndexes in increasing order to all of its layers so that the order is preserved when switching them on/off
         hideSingleBase: true // Hide the base layers section when there is only one layer
     }).addTo(map);
+}
+
+// Function to interpolate the nitrate rates from the well points into a hexbin surface
+function interpolateNitrateRates(features) {
+    
+    // Set options for the well point interpolation
+    var options = {
+        gridType: 'hex',        // use hexbins as the grid type
+        property: 'nitr_ran',   // interpolate values from the nitrate ranges
+        units: 'kilometers'     // hexbin size units
+    };
+    
+    // Interpolate the 
+    var nitrateRatesHexbins = turf.interpolate(features, 10, options);
+    //console.log(nitrateRatesHexbins);
+
+    // Convert the hexbins to a Leaflet GeoJson layer and add it to the map
+    L.geoJson(nitrateRatesHexbins).addTo(map);
 }
