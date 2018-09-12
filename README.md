@@ -1,2 +1,2 @@
 # nitrates_cancer
-Spatial analysis of nitrate rates and cancer in Wisconsin
+Spatial analysis of nitrate concentrations and cancer rates in Wisconsin
