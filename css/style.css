@@ -136,7 +136,41 @@ h1 {
 }
 
 
+/************************************************************/
 
+/* CSS RELATED TO THE LEGEND */
+
+.legend {
+    padding: 6px 8px;
+    font-size: 1em;
+    background: rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+}
+
+.legend h3 {
+    font-size: 1.1em;
+    font-weight: normal;
+    color: #001323;
+    margin 0 0 10px 0;
+}
+
+.legend span {
+    width: 20px;
+    height: 20px;
+    float: left;
+    margin: 0 10px 4px 0;
+}
+
+.legend label {
+    font-size: 1.1em;
+}
+
+.legend label:after {
+    content: '';
+    display: block;
+    clear: both;
+}
 
 /************************************************************/
 
@@ -381,7 +415,8 @@ h4 {
 
 .leaflet-top {
     position: absolute;
-/*    margin-top: 7.2em;*/   /* If there is a header, this pushes all the leaflet controls down */
+    /*    margin-top: 7.2em;*/
+    /* If there is a header, this pushes all the leaflet controls down */
     z-index: 1000;
 }
 
@@ -563,6 +598,7 @@ h4 {
 /* MEDIUM SCREEN SIZES (800px - 1360px) */
 
 @media (max-width: 1360px) {
+
     /* CHANGE SIZE OF HEADER TITLE*/
     h1 {
         font-size: 38px;
@@ -736,12 +772,13 @@ h4 {
         .leaflet-left .leaflet-control {
             margin-left: 0px;
         }
+
         .leaflet-right .leaflet-control {
             margin-left: 0px;
             float: left;
         }
 
-        
+
         /* POPUP STUFF */
         .custom-popup .leaflet-popup-content-wrapper {
             background-color: rgba(0, 0, 0, .80);
