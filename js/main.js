@@ -9,6 +9,13 @@ var Esri_WorldGrayReference = L.tileLayer('http://server.arcgisonline.com/ArcGIS
     attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
 });
 
+// Mapbox Light basemap
+var mapboxLight = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
+    attribution: 'Tiles &copy; Mapbox',
+    id: 'mapbox.light',
+    accessToken: 'pk.eyJ1Ijoic2tlZXRpZG90IiwiYSI6ImNqZW5vZ3cxdDEycWwyeW8wbXJndml0aG8ifQ.hDvVg6wvVxGy6xGL9ZBOdw',
+    detectRetina: true
+});
 
 // Initialize layers in global scope, to include them in the layer list
 var wellPointsLayerGroup = L.layerGroup(),
@@ -21,9 +28,12 @@ var wellPointsLayerGroup = L.layerGroup(),
 var censusTracts,
     wellPoints,
     cancerRatesHexbins,
-    nitrateRatesHexbins,
-    cancerRatesDataSource,
-    nitrateRatesDataSource;
+    nitrateRatesHexbins;
+
+
+// Initialize global variables for the distance decay coefficient and hexbin size with default values
+var distanceDecayCoefficient = 2,
+    hexbinArea = 10;
 
 
 // Initialize arrays to store the well points, census tracts, interpolated nitrate rates, and interpolated cancer rates
@@ -31,6 +41,10 @@ var wellPointsArray = [],
     censusTractsArray = [],
     interpolatedNitrateRatesArray = [],
     interpolatedCancerRatesArray = [];
+
+
+// Initialize a global variable for the layer list
+var layerList;
 
 
 // Set the map options
@@ -58,8 +72,16 @@ map.addLayer(Esri_WorldGrayCanvas);
 map.addLayer(Esri_WorldGrayReference);
 
 
+// Build the UI
+buildUI()
+
+
 // Build the layer list
 buildLayerList();
+
+
+// Build the sidebar and add it to the map
+var sidebar = L.control.sidebar('sidebar').addTo(map);
 
 
 // Use JQuery's getJSON() method to load the census tract and cancer rate data asynchronously
@@ -103,7 +125,7 @@ $.getJSON("data/well_nitrate.json", function (data) {
                 fillColor: '#3d3d3d',
                 fillOpacity: 1,
                 color: '#3d3d3d',
-                weight: .25,
+                weight: 0.25,
                 opacity: 1,
                 radius: 2.5
             });
@@ -149,41 +171,16 @@ function drawCensusTracts() {
         // Bind the popup to the tract
         layer.bindPopup(popup);
 
-
-        // Build a Turf feature collection from the census tracts
-
-        // Create shorthand variable to access the layer properties and coordinates
-        var props = layer.feature.properties;
-        var coordinates = layer.feature.geometry.coordinates;
-
-        //            console.log("Census Tract Coordinates:")
-        //            console.log(coordinates);
-
-        // Create a turf polygon feature for the census tract, with its coordinates and attributes
-        censusTractsFeature = turf.polygon(coordinates, props);
-        //console.log(censusTractsFeature);            
-
-        // Get the centroid of the census tract
-        var censusTractsFeatureCentroid = turf.centroid(censusTractsFeature, props);
-
-        // Push the current census tract centroid into an array
-        censusTractsArray.push(censusTractsFeatureCentroid);
-
     });
 
-    // Create a turf feature collection from the array of census tract centroid features
-    var features = turf.featureCollection(censusTractsArray);
-    //console.log("Census Tract Centroids Feature Collection:");
-    //console.log(features);
 
-    // Call the function to interpolate cancer rates and generate a hexbin surface
-    interpolateCancerRates(features);
+
 
     // Draw the legend for the census tracts
     drawCancerRatesLegend(breaks);
 
     // Move the census tracts to the bottom of the layer order
-    censusTracts.bringToBack();
+    //censusTracts.bringToBack();
 
 } // end drawCensusTracts()
 
@@ -231,21 +228,21 @@ function getCancerRateColor(d, breaks) {
 
         // If the data value <= the upper value of the fourth cluster   
     } else if (d <= breaks[3][1]) {
-        return '#2b8cbe'
+        return '#2b8cbe';
 
         // If the data value <= the upper value of the fifth cluster  
     } else if (d <= breaks[4][1]) {
-        return '#045a8d'
+        return '#045a8d';
 
     }
 } // end getCancerRateColor()
 
-// Create the legend for cancer rates by census tract     
+// Create the legend for cancer rates by census tract  
 function drawCancerRatesLegend(breaks) {
 
     // Create a new Leaflet control object, and position it bottom left
     var legend = L.control({
-        position: 'bottomleft'
+        position: 'bottomright'
     });
 
     // When the legend is added to the map
@@ -308,47 +305,13 @@ function drawWellPoints() {
         // Bind the popup to the well point
         layer.bindPopup(popup);
 
-
-        // Build a Turf feature collection from the well points
-
-        // Create shorthand variable to access the layer properties and coordinates
-        var props = layer.feature.properties;
-        var coordinates = layer.feature.geometry.coordinates;
-
-        // Create a turf point feature for the well point, with its coordinates and attributes
-        wellPointsFeature = turf.point(coordinates, props);
-        //console.log(wellPointsFeature);
-
-        // Push the current well point feature into an array
-        wellPointsArray.push(wellPointsFeature);
-
-        //            // Buffer the well points by 5 miles
-        //            var buffer = turf.buffer(wellPointsFeature, 5, {
-        //                units: 'miles'
-        //            });
-        //
-        //            // Convert the buffers to a Leaflet GeoJson layer and add it to the map
-        //            L.geoJson(buffer).addTo(map);
-
     });
-
-    // Create a turf feature collection from the array of well point features
-    var features = turf.featureCollection(wellPointsArray);
-    //console.log("Well Points Feature Collection:");
-    //console.log(features);
-
-    //        // Get the center point of the well point features
-    //        var center = turf.center(features);
-    //        console.log(center);
-
-    // Call the function to interpolate nitrate rates and generate a hexbin surface
-    interpolateNitrateRates(features);
 
     // Draw the legend for the well points
     drawNitrateRatesLegend(breaks);
 
     // Move the well points to the top of the layer order
-    wellPoints.bringToFront();
+    //wellPoints.bringToFront();
 
 } // end drawWellPoints()
 
@@ -396,11 +359,11 @@ function getNitrateRateColor(d, breaks) {
 
         // If the data value <= the upper value of the fourth cluster   
     } else if (d <= breaks[3][1]) {
-        return '#e34a33'
+        return '#e34a33';
 
         // If the data value <= the upper value of the fifth cluster  
     } else if (d <= breaks[4][1]) {
-        return '#b30000'
+        return '#b30000';
 
     }
 } // end getNitrateRateColor()
@@ -410,7 +373,7 @@ function drawNitrateRatesLegend(breaks) {
 
     // Create a new Leaflet control object, and position it bottom left
     var legend = L.control({
-        position: 'bottomleft'
+        position: 'bottomright'
     });
 
     // When the legend is added to the map
@@ -465,27 +428,155 @@ function buildLayerList() {
     };
 
     // Add the layer control to the map
-    var layerList = L.control.layers(baseMaps, overlays, {
+    layerList = L.control.layers(baseMaps, overlays, {
         collapsed: false, // Keep the layer list open
         autoZIndex: true, // Assign zIndexes in increasing order to all of its layers so that the order is preserved when switching them on/off
         hideSingleBase: true // Hide the base layers section when there is only one layer
     }).addTo(map);
 } // end buildLayerList()
 
-// Interpolate the cancer rates from the census tracts into a hexbin surface (http://turfjs.org/docs#interpolate)
 
-function interpolateCancerRates(features) {
+// Build the user interface to:
+// Select the #ui-controls <div> and add an event listener for when the user changes the attribute dropdown selection
+// When the user selects a new dropdown value:
+// 1. Assign it as the new mapped attribute
+// 2. Redraw the map with the newly selected attribute
+function buildUI() {
+
+    // Select the submit button
+    var submit = $('#submitButton');
+
+    // When the user clicks the close icon
+    submit.on('click', function (e) {
+
+        console.log("clicked submit");
+        
+        wellPoints.remove();
+        censusTracts.remove();
+//        censusTractsLayerGroup.remove();
+//        wellPointsLayerGroup.remove();
+        
+        // Use the JQuery select $() and val() methods to determine the value of the distance decay coefficient text box
+        distanceDecayCoefficient = $('#distanceDecayCoefficient').val();
+        distanceDecayCoefficient = parseFloat(distanceDecayCoefficient);
+        
+        // Use the JQuery select $() and val() methods to determine the value of the hexbin size text box
+        hexbinArea = $('#hexbinArea').val();
+        hexbinArea = parseFloat(hexbinArea);
+        
+        console.log("Distance Decay Coefficient");
+        console.log(distanceDecayCoefficient);
+        
+        console.log("Hexbin Area");
+        console.log(hexbinArea);
+
+        // Hide the current legend
+        $('.legend').hide();
+        
+        // Hide and redraw the layer list
+        layerList.remove();
+        buildLayerList();
+
+        // Call the function to interpolate nitrate rates and generate a hexbin surface
+        interpolateNitrateRates(distanceDecayCoefficient, hexbinArea);
+
+        // Call the function to interpolate cancer rates and generate a hexbin surface
+        interpolateCancerRates(distanceDecayCoefficient, hexbinArea);
+        
+        // Update layer list without duplicating it
+
+
+        //        // Show the marker list
+        //        $('#markerListPanel').show();
+
+    });
+    
+    // Select the reset button
+    var reset = $('#resetButton');
+
+    // When the user clicks the close icon
+    reset.on('click', function (e) {
+
+        console.log("clicked reset");
+
+        // Use the JQuery select $() and val() methods to determine the value of the selected dropdown option and assign it as the new mapped attribute
+        attribute = $(this).val();
+
+        // Hide the current legend
+        $('.legend').hide();
+        
+        nitrateRatesHexbins.remove();
+        cancerRatesHexbins.remove();
+//        nitrateRatesIDWLayerGroup.remove();
+//        cancerRatesIDWLayerGroup.remove();
+        
+        censusTracts.addTo(map);
+        wellPoints.addTo(map);
+//        censusTracts.addTo(censusTractsLayerGroup);
+//        wellPoints.addTo(wellPointsLayerGroup);
+
+
+        // Call the function to redraw the well points
+        drawWellPoints();  
+        
+        // Call the function to redraw the census tracts
+        drawCensusTracts();        
+        
+        // Hide and redraw the layer list
+        layerList.remove();
+        buildLayerList();        
+               
+        // Update layer list without duplicating it
+
+        //        // Show the marker list
+        //        $('#markerListPanel').show();
+
+    });    
+
+}
+
+// Interpolate the cancer rates from the census tracts into a hexbin surface (http://turfjs.org/docs#interpolate)
+function interpolateCancerRates(distanceDecayCoefficient, hexbinArea) {
+
+    // Loop through each feature
+    censusTracts.eachLayer(function (layer) {
+
+        // Build a Turf feature collection from the census tracts
+
+        // Create shorthand variable to access the layer properties and coordinates
+        var props = layer.feature.properties;
+        var coordinates = layer.feature.geometry.coordinates;
+
+        //            console.log("Census Tract Coordinates:")
+        //            console.log(coordinates);
+
+        // Create a turf polygon feature for the census tract, with its coordinates and attributes
+        censusTractsFeature = turf.polygon(coordinates, props);
+        //console.log(censusTractsFeature);            
+
+        // Get the centroid of the census tract
+        var censusTractsFeatureCentroid = turf.centroid(censusTractsFeature, props);
+
+        // Push the current census tract centroid into an array
+        censusTractsArray.push(censusTractsFeatureCentroid);
+
+    });
+
+    // Create a turf feature collection from the array of census tract centroid features
+    var features = turf.featureCollection(censusTractsArray);
+    //console.log("Census Tract Centroids Feature Collection:");
+    //console.log(features);    
 
     // Set options for the cancer rate interpolation
     var options = {
         gridType: 'hex', // use hexbins as the grid type
         property: 'canrate', // interpolate values from the cancer rates
         units: 'kilometers', // hexbin size units
-        weight: 2 // distance decay coefficient, q
+        weight: distanceDecayCoefficient // distance decay coefficient, q
     };
 
     // Interpolate the census tract features using a 10 sq km grid size and the options just specified
-    var cancerRatesHexbinsTurf = turf.interpolate(features, 10, options);
+    var cancerRatesHexbinsTurf = turf.interpolate(features, hexbinArea, options);
     //console.log(cancerRatesHexbinsTurf);
 
     // Loop through each hexbin and get its interpolated cancer rate
@@ -510,7 +601,7 @@ function interpolateCancerRates(features) {
                 opacity: 0.5 // Border opacity
             };
         }
-        
+
     }).addTo(cancerRatesIDWLayerGroup);
 
     // Get the class breaks based on the ckmeans classification method
@@ -543,18 +634,56 @@ function interpolateCancerRates(features) {
 } // end interpolateCancerRates()
 
 // Interpolate the nitrate concentrations from the well points into a hexbin surface (http://turfjs.org/docs#interpolate)
-function interpolateNitrateRates(features) {
+function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
+
+
+    // Loop through each feature
+    wellPoints.eachLayer(function (layer) {
+
+
+        // Build a Turf feature collection from the well points
+
+        // Create shorthand variable to access the layer properties and coordinates
+        var props = layer.feature.properties;
+        var coordinates = layer.feature.geometry.coordinates;
+
+        // Create a turf point feature for the well point, with its coordinates and attributes
+        wellPointsFeature = turf.point(coordinates, props);
+        //console.log(wellPointsFeature);
+
+        // Push the current well point feature into an array
+        wellPointsArray.push(wellPointsFeature);
+
+        //            // Buffer the well points by 5 miles
+        //            var buffer = turf.buffer(wellPointsFeature, 5, {
+        //                units: 'miles'
+        //            });
+        //
+        //            // Convert the buffers to a Leaflet GeoJson layer and add it to the map
+        //            L.geoJson(buffer).addTo(map);
+
+    });
+
+    // Create a turf feature collection from the array of well point features
+    var features = turf.featureCollection(wellPointsArray);
+    //console.log("Well Points Feature Collection:");
+    //console.log(features);
+
+    //        // Get the center point of the well point features
+    //        var center = turf.center(features);
+    //        console.log(center);
+
 
     // Set options for the well point interpolation
     var options = {
         gridType: 'hex', // use hexbins as the grid type
         property: 'nitr_ran', // interpolate values from the nitrate concentrations
         units: 'kilometers', // hexbin size units
-        weight: 2 // distance decay coefficient, q
+        weight: distanceDecayCoefficient // distance decay coefficient, q
     };
 
     // Interpolate the well point features using a 10 sq km grid size and the options just specified
-    var nitrateRatesHexbinsTurf = turf.interpolate(features, 10, options);
+    var nitrateRatesHexbinsTurf = turf.interpolate(features, hexbinArea, options);
 
     // Loop through each hexbin and get its interpolated nitrate concentration
     for (var hexbin in nitrateRatesHexbinsTurf.features) {
@@ -578,12 +707,12 @@ function interpolateNitrateRates(features) {
                 color: '#585858', // Stroke Color
                 weight: 0.5, // Stroke Weight
                 fillOpacity: 0.75, // Override the default fill opacity
-                opacity: .5 // Border opacity
+                opacity: 0.5 // Border opacity
             };
         }
 
     }).addTo(nitrateRatesIDWLayerGroup);
-    
+
     // Get the class breaks based on the ckmeans classification method
     var breaks = getNitrateRateClassBreaks(nitrateRatesHexbins);
 
@@ -607,6 +736,6 @@ function interpolateNitrateRates(features) {
     nitrateRatesHexbins.bringToFront();
 
     // Draw the legend for the nitrate rate hexbins
-    drawNitrateRatesLegend(breaks);    
-    
+    drawNitrateRatesLegend(breaks);
+
 } // end interpolateNitrateRates()

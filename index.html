@@ -1,34 +1,61 @@
 <!DOCTYPE html>
-<html lang="en">
+<html class="no-js" lang="en">
 
 <head>
 
-    <!-- BOILERPLATE HTML -->
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0" />
-    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <!-- ****************************************************************************************** -->
+    <!-- Boilerplate HTML -->
+    <!-- ****************************************************************************************** -->
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
     <title>Spatial Analysis of Well Nitrates and Cancer Occurrences in Wisconsin</title>
+    <meta name="description" content="">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 
-    <!-- LINKS TO STYLE SHEETS -->
-    <link rel="stylesheet" href="lib/leaflet/leaflet.css">
-    <link href="css/style.css" rel="stylesheet">
+    <link rel="manifest" href="site.webmanifest">
+    <link rel="apple-touch-icon" href="icon.png">
+    <!-- Place favicon.ico in the root directory -->
 
-    <!-- LEAFTLET JS -->
-    <!-- Needs to go after Leaflet CSS -->
-    <script src="https://unpkg.com/leaflet@1.3.1/dist/leaflet.js" integrity="sha512-/Nsx9X4HebavoBvEBuyp3I7od5tA0UzAxs+j83KgC8PU0kgB4XiK4Lfe4y4cgBtaRJQEIFCW+oC506aPT2L1zw==" crossorigin=""></script>
-    <script type="text/javascript" src="lib/leaflet/leaflet.js"></script>
-    <script type="text/javascript" src="lib/leaflet/leaflet-src.js"></script>
 
-    <!-- RESPONSIVE POPUP PLUGIN (MAKES POPUPS CENTER CORRECTLY ON MOBILE) -->
-    <script src="https://unpkg.com/leaflet-responsive-popup@0.2.0/leaflet.responsive.popup.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/leaflet-responsive-popup@0.2.0/leaflet.responsive.popup.css" />
+    <!-- ****************************************************************************************** -->
+    <!-- Links to Stylesheets -->
+    <!-- ****************************************************************************************** -->
+
+    <!-- BOILERPLATE STYLESHEETS -->
+    <link rel="stylesheet" href="css/normalize.css">
+    <link rel="stylesheet" href="css/main.css">
+
+    <!-- LEAFLET STYLESHEET -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.3.4/dist/leaflet.css" />
+
+    <!-- LEAFLET SIDEBAR STYLESHEET -->
+    <link rel="stylesheet" href="lib/sidebar-v2/css/leaflet-sidebar.css" />
+
+    <!-- CUSTOM STYLESHEET -->
+    <link rel="stylesheet" href="css/leafletDemoRecording.css">
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- FONT AWESOME ICONS -->
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.1.0/css/font-awesome.min.css" rel="stylesheet">
+
+    <!-- GOOGLE FONTS -->
+    <link href="https://fonts.googleapis.com/css?family=Roboto" rel="stylesheet">
+    <link href='https://fonts.googleapis.com/css?family=Open+Sans:400,400italic,500,600,700' rel='stylesheet' type='text/css'>
+
+
+    <!-- ****************************************************************************************** -->
+    <!-- Links to JavaScript Libraries -->
+    <!-- ****************************************************************************************** -->
+
+    <!-- LEAFLET JS (Needs to go after Leaflet CSS) -->
+    <script src="https://unpkg.com/leaflet@1.3.4/dist/leaflet.js"></script>
 
     <!-- ESRI LEAFLET -->
-    <script src="https://unpkg.com/esri-leaflet@2.1.3/dist/esri-leaflet.js" integrity="sha512-pijLQd2FbV/7+Jwa86Mk3ACxnasfIMzJRrIlVQsuPKPCfUBCDMDUoLiBQRg7dAQY6D1rkmCcR8286hVTn/wlIg==" crossorigin=""></script>
+    <script src="https://unpkg.com/esri-leaflet@2.2.3/dist/esri-leaflet.js" integrity="sha512-YZ6b5bXRVwipfqul5krehD9qlbJzc6KOGXYsDjU9HHXW2gK57xmWl2gU6nAegiErAqFXhygKIsWPKbjLPXVb2g==" crossorigin=""></script>
 
     <!-- JQUERY -->
-    <script type="text/javascript" src="lib/jquery/jquery-3.1.1.js"></script>
-    <script type="text/javascript" src="http://code.jquery.com/ui/1.11.0/jquery-ui.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.js" integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60=" crossorigin="anonymous"></script>
+    <script type="text/javascript" src="http://code.jquery.com/ui/1.12.0/jquery-ui.min.js"></script>
 
     <!-- TURF JS -->
     <script src='https://npmcdn.com/@turf/turf/turf.min.js'></script>
@@ -40,70 +67,98 @@
 
 <body>
 
-    <!-- MAP -->
-    <div class="custom-popup" id="map"></div>
+    <!--[if lte IE 9]>
+    <p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="https://browsehappy.com/">upgrade your browser</a> to improve your experience and security.</p>
+  <![endif]-->
 
-    <!-- SEARCH BOX -->
-    <div id="geocoder-control-input" type="text" placeholder="Search for an address" autocomplete="true"></div>
+    <script src="js/vendor/modernizr-3.6.0.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js" integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8=" crossorigin="anonymous"></script>
+    <script>
+        window.jQuery || document.write('<script src="js/vendor/jquery-3.3.1.min.js"><\/script>')
+    </script>
+
+
+    <!-- MAP -->
+    <div class="sidebar-map" id="map"></div>
+
 
     <!-- HEADER TITLE -->
     <!--
     <div id="title">
         <h1>NITRATES AND CANCER</h1>
     </div>
-
-    <div id="mobile-title">
-        <h1>NITRATES AND CANCER</h1>
-    </div>
 -->
 
 
-    <!-- NAVBAR LINKS-->
-    <!--
-    <div id="top-buttons">
-        <div class="mobile-buttons">
-            <div id="about-button">About the project</div>
+    <div id="sidebar" class="sidebar collapsed">
+        <!-- Nav tabs -->
+        <div class="sidebar-tabs">
+            <ul role="tablist">
+                <li><a href="#home" role="tab"><i class="fa fa-bars"></i></a></li>
+            </ul>
+
+            <!--
+            <ul role="tablist">
+                <li><a href="#settings" role="tab"><i class="fa fa-gear"></i></a></li>
+            </ul>
+-->
         </div>
-    </div>
+
+        <!-- Tab panes -->
+        <div class="sidebar-content">
+            <div class="sidebar-pane" id="home">
+                <h1 class="sidebar-header">
+                    Spatial Analysis of Well Nitrates and Cancer Occurrences in Wisconsin
+                    <span class="sidebar-close"><i class="fa fa-caret-left"></i></span>
+                </h1>
+
+                <!-- Build UI control-->
+                <div id='ui-controls'>
+                    <div><label>Distance Decay Coefficient:</label></div>
+                    <input type="text" id="distanceDecayCoefficient" value="2">
+                    <div><label>Hexbin Area (sq km):</label></div>
+                    <input type="text" id="hexbinArea" value="10">
+                    <br><br>
+                    <input id="submitButton" type="submit" value="Submit">
+                    <input id="resetButton" type="submit" value="Reset">
+                </div>
+
+<!--
+
+                <p>A responsive sidebar for mapping libraries like <a href="http://leafletjs.com/">Leaflet</a> or <a href="http://openlayers.org/">OpenLayers</a>.</p>
+
+                <p class="lorem">Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet. Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et dolore magna aliquyam erat, sed diam voluptua. At vero eos et accusam et justo duo dolores et ea rebum. Stet clita kasd gubergren, no sea takimata sanctus est Lorem ipsum dolor sit amet.</p>
 -->
 
+            </div>
 
-    <!-- ABOUT MODAL -->
-    <div id="about-modal" class="modal">
-        <!-- ABOUT MODAL CONTENT -->
-        <div class="modal-content">
-            <span class="close-about">&times;</span>
-            <div class="custom-header">Contact</div>
-            <p>Questions? Comments? Reach out to us at agsl@uwm.edu or on <a href="https://twitter.com/agslib?lang=en">Twitter</a>.</p>
-            <div class="custom-header">About the Maps </div>
-            <p>The Sanborn Maps of Milwaukee are fire insurance atlases held by the American Geographical Society Library (AGSL). This 1910 atlas includes eight volumes, consisting of 830 map sheets. Sanborn maps were designed to assist fire insurance agents with insuring property. Produced for over 12,000 urbanized areas in the United States, Sanborn maps have been described by the Library of Congress as "the single most important record of urban growth and development in the United States during the past one hundred years." The American Geographical Society Library holds Sanborn maps dating back to 1894.</p>
-            <div class="custom-header">About the Project</div>
-            <p>In their original format, the 830 sheets are 25 inches tall by 22.5 inches wide. Each sheet exists as an individual map item, and a particular city block can be found by referencing a paper key. The maps were digitized and uploaded to the library’s <a href="https://uwm.edu/lib-collections/sanborn/">Digital Collections</a> in 2007. To find an area, one must reference a digitized map key.</p>
-            <p>Finding information in these incredibly detailed and valuable map sheets is hindered by the segmented viewing process of having to cross-reference map sheets with keys. This process of navigating thumbnails in a digital collection does not lend itself to a truly immersive experience, where one can get a feel for what the city was like at the time, or conceptualize how one map sheet fits in with others. For that reason, the American Geographical Society Library identified this project as a goal for the library. </p>
-            <p>In 2017 Milwaukee County Land Information Office (MCLIO) georeferenced the American Geographical Society’s 1910 Sanborn atlas sheets. Adding geographic location to these library items has opened doors for many exciting ways that scholars can access historic information from these sources. Now, the sheets appear as one seamless map, but each sheet can be isolated and linked to the individual item in the digital collection. This project is one of many the AGSL is envisioning for these resources, so stay tuned for more to come.</p>
-            <div class="custom-header">About the Software</div>
-            <p>Have an idea for a mapping project using this atlas? The mosaiced sheets are published and available as a map service <a href="http://webgis.uwm.edu/arcgisuwm/rest/services/AGSL/SanbornMaps/MapServer">here</a>.</p>
-            <p>These sheets were georeferenced using ArcMap, and published on the UWM ArcGIS server. The application was built using Leaflet, a light-weight, flexible Javascript library created for web mapping.</p>
-            <p><a href="https://github.com/bellegis/sanborn-agsl" target="_blank">Project Github</a></p>
-            <div class="custom-header">Credits</div>
-            <p>Belle Lipton: Designer / Developer</p>
-            <p><a href="https://skeetidot.github.io">Lauren Winkler: Designer / Developer</a></p>
-            <p>Marker based on a design created by Alex Kwa from the Noun Project</p>
-            <div class="custom-header">Special Thanks</div>
-            <p>Stephen Appel – Geospatial Information Specialist, American Geographical Society Library</p>
-            <p>Chris Scheele – Department of Geography, University of Wisconsin Madison</p>
-            <p>Emily Berth – GIS Technician, Milwaukee County Land Information Office</p>
-            <p>Kurt Meigast – IT Manager, UWM School of Architecture and Urban Planning</p>
+            <div class="sidebar-pane" id="settings">
+                <h1 class="sidebar-header">Settings<span class="sidebar-close"><i class="fa fa-caret-left"></i></span></h1>
+            </div>
         </div>
     </div>
-    <!-- ABOUT MODAL ENDS HERE (THESE ARE GOING TO BE LONG) -->
+
 
 
     <!-- LINK TO MAIN JAVASCRIPT-->
 
-    <script type="text/javascript" src="js/main.js"></script>
+    <script src="js/plugins.js"></script>
+    <script src="lib/sidebar-v2/js/leaflet-sidebar.js"></script>
+    <script src="js/main.js"></script>
 
 
+    <!-- Google Analytics: change UA-XXXXX-Y to be your site's ID. -->
+    <script>
+        window.ga = function() {
+            ga.q.push(arguments)
+        };
+        ga.q = [];
+        ga.l = +new Date;
+        ga('create', 'UA-XXXXX-Y', 'auto');
+        ga('send', 'pageview')
+    </script>
+    <script src="https://www.google-analytics.com/analytics.js" async defer></script>
 </body>
+
 
 </html>
