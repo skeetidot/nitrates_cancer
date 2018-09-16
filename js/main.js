@@ -180,7 +180,7 @@ function drawCensusTracts() {
         });
 
         // Build the popup for the census tract
-        var popup = "<b>Cancer Rate (% of Census Tract Population): </b>" + (layer.feature.properties.canrate * 100).toLocaleString() + "%";
+        var popup = "<b>Cancer Rate: </b>" + (layer.feature.properties.canrate * 100).toLocaleString() + "%";
 
         // Bind the popup to the tract
         layer.bindPopup(popup);
@@ -265,8 +265,8 @@ function drawCancerRatesLegend(breaks) {
         // Create a new HTML <div> element and give it a class name of "legend"
         var div = L.DomUtil.create('div', 'legend');
 
-        // First append an <h3> heading tag to the div holding the current attribute and norm values (i.e., the mapped phenomena)
-        div.innerHTML = "<h3><b>Cancer Rate</b></h3>";
+        // First append an <h3> heading tag to the div holding the current attribute
+        div.innerHTML = "<h3><b>Cancer Rate (% per Census Tract)</b></h3>";
 
         // For each of our breaks
         for (var i = 0; i < breaks.length; i++) {
@@ -277,8 +277,8 @@ function drawCancerRatesLegend(breaks) {
             // Concatenate a <span> tag styled with the color and the range values of that class and include a label with the low and high ends of that class range
             div.innerHTML +=
                 '<span style="background:' + color + '"></span> ' +
-                '<label>' + (breaks[i][0] * 100).toLocaleString() + '% &mdash; ' +
-                (breaks[i][1] * 100).toLocaleString() + '%</label>';
+                '<label>' + parseFloat(breaks[i][0] * 100).toFixed(2).toLocaleString() + '% &mdash; ' +
+                parseFloat(breaks[i][1] * 100).toFixed(2).toLocaleString() + '%</label>';
 
         }
 
@@ -400,7 +400,7 @@ function drawNitrateRatesLegend(breaks) {
         // Create a new HTML <div> element and give it a class name of "legend"
         var div = L.DomUtil.create('div', 'legend');
 
-        // First append an <h3> heading tag to the div holding the current attribute and norm values (i.e., the mapped phenomena)
+        // First append an <h3> heading tag to the div holding the current attribute
         div.innerHTML = "<h3><b>Nitrate Concentration (parts per million)</b></h3>";
 
         // For each of our breaks
@@ -412,8 +412,8 @@ function drawNitrateRatesLegend(breaks) {
             // Concatenate a <span> tag styled with the color and the range values of that class and include a label with the low and high ends of that class range
             div.innerHTML +=
                 '<span style="background:' + color + '"></span> ' +
-                '<label>' + (breaks[i][0]).toLocaleString() + ' &mdash; ' +
-                (breaks[i][1]).toLocaleString() + ' ppm' + '</label>';
+                '<label>' + parseFloat(breaks[i][0]).toFixed(2).toLocaleString() + ' &mdash; ' +
+                parseFloat(breaks[i][1]).toFixed(2).toLocaleString() + ' ppm' + '</label>';
 
         }
 
@@ -441,11 +441,10 @@ function buildLayerList(overlays) {
 } // end buildLayerList()
 
 
-// Build the user interface to:
-// Select the #ui-controls <div> and add an event listener for when the user changes the attribute dropdown selection
-// When the user selects a new dropdown value:
-// 1. Assign it as the new mapped attribute
-// 2. Redraw the map with the newly selected attribute
+// When the user clicks Submit or Reset
+// 1. Clear the existing layers and legend
+// 2. If Submit is clicked, get the distance decay coefficient and hexbin size and redraw the map with the interpolated layers
+// 3. If Reset is clicked, redraw the map with the original well points and census tracts
 function getUIActions() {
 
     // Select the submit button
@@ -566,6 +565,7 @@ function getUIActions() {
 
 }
 
+
 // Interpolate the cancer rates from the census tracts into a hexbin surface (http://turfjs.org/docs#interpolate)
 function interpolateCancerRates(distanceDecayCoefficient, hexbinArea) {
     
@@ -652,7 +652,7 @@ cancerRatesHexbins.eachLayer(function (layer) {
     });
 
     // Build the popup for the hexbin
-    var popup = "<b>Cancer Rate (% of Census Tract Population): </b>" + (layer.feature.properties.canrate * 100).toFixed(2).toLocaleString() + "%";
+    var popup = "<b>Cancer Rate: </b>" + (layer.feature.properties.canrate * 100).toFixed(2).toLocaleString() + "% of census tract population";
 
     // Bind the popup to the hexbin
     layer.bindPopup(popup);
@@ -666,6 +666,7 @@ cancerRatesHexbins.bringToFront();
 drawCancerRatesLegend(breaks);
 
 } // end interpolateCancerRates()
+
 
 // Interpolate the nitrate concentrations from the well points into a hexbin surface (http://turfjs.org/docs#interpolate)
 function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
