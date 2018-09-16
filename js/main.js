@@ -87,8 +87,8 @@ map.addLayer(Esri_WorldGrayCanvas);
 map.addLayer(Esri_WorldGrayReference);
 
 
-// Build the UI
-buildUI()
+// Listen for the Submit or Reset buttons. If clicked, get the UI parameters and update the map.
+getUIActions();
 
 
 // Build the initial layer list
@@ -123,20 +123,12 @@ $.getJSON("data/cancer_tracts.json", function (data) {
                 fillOpacity: 0.5, // override the default fill opacity
                 opacity: 1 // border opacity
             };
-        },
-
-        // Loop through each feature and create a popup
-        onEachFeature: function (feature, layer) {
-            layer.on('click', function (e) {
-                //buildCensusTractsPopupContent(feature, layer, e);
-            });
         }
+        
     }).addTo(censusTractsLayerGroup);
 
     // Draw the census tracts
     drawCensusTracts();
-
-
 });
 
 
@@ -156,56 +148,12 @@ $.getJSON("data/well_nitrate.json", function (data) {
                 opacity: 1,
                 radius: 2.5
             });
-        },
-
-        // LOOP THROUGH EACH FEATURE AND CREATE A POPUP
-        onEachFeature: function (feature, layer) {
-            layer.on('click', function (e) {
-                //buildPopupContent(feature, layer, e);
-            });
         }
+
     }).addTo(wellPointsLayerGroup);
 
     // Draw the well points
     drawWellPoints();
-
-});
-
-// Detect which layer was selected
-$(document).on('change', '.leaflet-control-layers-selector', function () {
-
-    var checkboxGroup = document.getElementsByClassName('leaflet-control-layers-selector');
-
-    console.log("layer changed");
-
-    if (checkboxGroup[1].checked == true) {
-        console.log("layer 1 checked");
-    } else {
-        console.log("layer 1 unchecked");
-
-        if (wellPoints != undefined) {
-            wellPoints.remove();
-        }
-
-        if (nitrateRatesHexbins != undefined) {
-            nitrateRatesHexbins.remove();
-        }
-
-    }
-
-    if (checkboxGroup[2].checked == true) {
-        console.log("layer 2 checked");
-    } else {
-        console.log("layer 2 unchecked");
-
-        if (censusTracts != undefined) {
-            censusTracts.remove();
-        }
-
-        if (cancerRatesHexbins != undefined) {
-            cancerRatesHexbins.remove();
-        }
-    }
 
 });
 
@@ -217,7 +165,7 @@ $(document).on('change', '.leaflet-control-layers-selector', function () {
 // 2. Build and bind its popup
 // 3. Build a Turf feature collection from the tract centroids
 // 4. Call the interpolateCancerRates() method to interpolate the cancer rates to hexbins
-// Draw the legend      
+// Draw the legend
 function drawCensusTracts() {
 
     // Get the class breaks based on the ckmeans classification method
@@ -242,13 +190,8 @@ function drawCensusTracts() {
     // Draw the legend for the census tracts
     drawCancerRatesLegend(breaks);
 
-    //console.log(censusTractsLayerGroup);
+    // Move census tracts to the back of the layer order
     censusTracts.bringToBack();
-
-    // When census tracts are loaded, move them below well points
-    //    censusTractsLayerGroup.on('load', function (e) {
-    //        censusTractsLayerGroup.bringToBack();
-    //    });
 
 } // end drawCensusTracts()
 
@@ -503,7 +446,7 @@ function buildLayerList(overlays) {
 // When the user selects a new dropdown value:
 // 1. Assign it as the new mapped attribute
 // 2. Redraw the map with the newly selected attribute
-function buildUI() {
+function getUIActions() {
 
     // Select the submit button
     var submit = $('#submitButton');
@@ -515,19 +458,19 @@ function buildUI() {
 
         // Remove the current layers from the map
 
-        if (wellPoints != undefined) {
+        if (wellPoints !== undefined) {
             wellPoints.remove();
         }
 
-        if (censusTracts != undefined) {
+        if (censusTracts !== undefined) {
             censusTracts.remove();
         }
 
-        if (nitrateRatesHexbins != undefined) {
+        if (nitrateRatesHexbins !== undefined) {
             nitrateRatesHexbins.remove();
         }
 
-        if (cancerRatesHexbins != undefined) {
+        if (cancerRatesHexbins !== undefined) {
             cancerRatesHexbins.remove();
         }
 
@@ -539,11 +482,8 @@ function buildUI() {
         hexbinArea = $('#hexbinArea').val();
         hexbinArea = parseFloat(hexbinArea);
 
-        console.log("Distance Decay Coefficient");
-        console.log(distanceDecayCoefficient);
-
-        console.log("Hexbin Area");
-        console.log(hexbinArea);
+        console.log("Distance Decay Coefficient: " + distanceDecayCoefficient);
+        console.log("Hexbin Area: " + hexbinArea);
 
         // Hide the current legend
         $('.legend').hide();
@@ -581,19 +521,19 @@ function buildUI() {
         $('.legend').hide();
 
         // Remove the current layers from the map
-        if (wellPoints != undefined) {
+        if (wellPoints !== undefined) {
             wellPoints.remove();
         }
 
-        if (censusTracts != undefined) {
+        if (censusTracts !== undefined) {
             censusTracts.remove();
         }
 
-        if (nitrateRatesHexbins != undefined) {
+        if (nitrateRatesHexbins !== undefined) {
             nitrateRatesHexbins.remove();
         }
 
-        if (cancerRatesHexbins != undefined) {
+        if (cancerRatesHexbins !== undefined) {
             cancerRatesHexbins.remove();
         }
 
@@ -630,7 +570,7 @@ function buildUI() {
 function interpolateCancerRates(distanceDecayCoefficient, hexbinArea) {
     
     // Remove any previous features from the layer group    
-    if (cancerRatesIDWLayerGroup != undefined) {
+    if (cancerRatesIDWLayerGroup !== undefined) {
         cancerRatesIDWLayerGroup.clearLayers();
     }
 
@@ -643,8 +583,8 @@ function interpolateCancerRates(distanceDecayCoefficient, hexbinArea) {
         var props = layer.feature.properties;
         var coordinates = layer.feature.geometry.coordinates;
 
-        //            console.log("Census Tract Coordinates:")
-        //            console.log(coordinates);
+        //console.log("Census Tract Coordinates:")
+        //console.log(coordinates);
 
         // Create a turf polygon feature for the census tract, with its coordinates and attributes
         censusTractsFeature = turf.polygon(coordinates, props);
@@ -731,7 +671,7 @@ drawCancerRatesLegend(breaks);
 function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
 
     // Remove any previous features from the layer group    
-    if (nitrateRatesIDWLayerGroup != undefined) {
+    if (nitrateRatesIDWLayerGroup !== undefined) {
         nitrateRatesIDWLayerGroup.clearLayers();
     }
 
