@@ -375,7 +375,7 @@ h1 {
 }
 
 .custom-popup .leaflet-popup-content-wrapper {
-    background-color: rgba(0, 0, 0, .75);
+/*    background-color: rgba(0, 0, 0, .75);*/
     color: white;
     border-radius: 8px;
     font-weight: 400;
@@ -413,5 +413,5 @@ h1 {
 
 .leaflet-popup-content-wrapper,
 .leaflet-popup-tip {
-    background: rgba(0, 0, 0, 0.6);
+/*    background: rgba(0, 0, 0, 0.6);*/
 }

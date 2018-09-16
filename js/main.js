@@ -166,7 +166,7 @@ function drawCensusTracts() {
         });
 
         // Build the popup for the census tract
-        var popup = "Cancer Rate: " + layer.feature.properties.canrate;
+        var popup = "<b>Cancer Rate (% of Census Tract Population): </b>" + (layer.feature.properties.canrate*100).toLocaleString() + "%";
 
         // Bind the popup to the tract
         layer.bindPopup(popup);
@@ -263,8 +263,8 @@ function drawCancerRatesLegend(breaks) {
             // Concatenate a <span> tag styled with the color and the range values of that class and include a label with the low and high ends of that class range
             div.innerHTML +=
                 '<span style="background:' + color + '"></span> ' +
-                '<label>' + (breaks[i][0]).toLocaleString() + ' &mdash; ' +
-                (breaks[i][1]).toLocaleString() + '</label>';
+                '<label>' + (breaks[i][0]*100).toLocaleString() + '% &mdash; ' +
+                (breaks[i][1]*100).toLocaleString() + '%</label>';
 
         }
 
@@ -300,7 +300,7 @@ function drawWellPoints() {
         });
 
         // Build the popup for the well point
-        var popup = "Nitrate Concentration: " + layer.feature.properties.nitr_ran.toFixed(2) + " ppm";
+        var popup = "<b>Nitrate Concentration: </b>" + layer.feature.properties.nitr_ran.toFixed(2) + " ppm";
 
         // Bind the popup to the well point
         layer.bindPopup(popup);
@@ -616,7 +616,7 @@ function interpolateCancerRates(distanceDecayCoefficient, hexbinArea) {
         });
 
         // Build the popup for the hexbin
-        var popup = "Cancer Rate: " + layer.feature.properties.canrate.toFixed(2);
+        var popup = "<b>Cancer Rate (% of Census Tract Population): </b>" + (layer.feature.properties.canrate*100).toFixed(2).toLocaleString() + "%";        
 
         // Bind the popup to the hexbin
         layer.bindPopup(popup);
@@ -725,7 +725,7 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
         });
 
         // Build the popup for the hexbin
-        var popup = "Nitrate Concentration: " + layer.feature.properties.nitr_ran.toFixed(2) + " ppm";
+        var popup = "<b>Nitrate Concentration: </b>" + layer.feature.properties.nitr_ran.toFixed(2) + " ppm";
 
         // Bind the popup to the hexbin
         layer.bindPopup(popup);
