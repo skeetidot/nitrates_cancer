@@ -25,23 +25,25 @@ body {
     margin: 0;
 }
 
-
+p {
+    font-size: 1.1em;
+}
 
 /**********************************************************************/
 
 /* CSS TO STYLE THE MAIN HEADER  */
 
 #title {
-    position: fixed;
+    position: absolute;
     z-index: 100000;
     top: 0;
     left: 0;
     width: 100%;
-    padding-top: 10px;
-    padding-bottom: .5;
-    background-color: rgba(35, 31, 32, 1);
+    padding-top: 5px;
+    padding-bottom: 0.5px;
+    background-color: #0074d9;
     font-weight: 400;
-    color: rgb(255, 189, 0);
+    color: '#fff';     
 }
 
 
@@ -52,8 +54,8 @@ h1 {
     margin-left: 15px;
     margin-right: 15px;
     margin-top: 10px;
-    font-size: 36px;
-    background-color: rgba (0, 0, 0, 0)
+    font-size: 1.5em;
+    color: '#fff';    
 }
 
 #mapHeader {
@@ -101,6 +103,7 @@ h1 {
 
 
 
+
 /**********************************************************************/
 
 /* CSS TO STYLE THE MENU ITEMS */
@@ -126,21 +129,24 @@ h1 {
     color: rgb(141, 141, 142);
 }
 
-
-/* ABOUT MENU ITEM STYLING */
-
-#about-button {
-    cursor: pointer;
-    text-transform: uppercase;
-    float: left;
-    padding-right: 20px;
-    padding-top: 20px;
-    font-size: 20px;
-    text-decoration: none;
-    font-weight: 400;
-    color: rgb(80, 80, 80);
+#ui-controls {
+    padding-top: 0px;
 }
 
+#ui-controls #fieldLabel {
+    font-size: 1.25em;
+    font-weight: bold;
+    margin-top: 5px;
+}
+
+#ui-controls input {
+    margin-bottom: 5px;
+}
+
+#ui-controls input[type="button"], input[type="submit"] {
+    font-size: 1.1em;
+    margin-right: 5px;
+}
 
 /************************************************************/
 
@@ -156,10 +162,11 @@ h1 {
 }
 
 .legend h3 {
-    font-size: 1.1em;
+    font-size: 1.25em;
     font-weight: normal;
     color: #001323;
     margin-top: 0px;
+    margin-bottom: 7px;
 }
 
 .legend span {
@@ -375,7 +382,6 @@ h1 {
 }
 
 .custom-popup .leaflet-popup-content-wrapper {
-/*    background-color: rgba(0, 0, 0, .75);*/
     color: white;
     border-radius: 8px;
     font-weight: 400;
