@@ -460,7 +460,7 @@ function getUIActions() {
     // When the user clicks submit
     submit.on('click', function (e) {
 
-        console.log("clicked submit");
+        console.log("Clicked submit");
 
         // Call the submitParameters function to get the distance decay coefficient and hexbin size and redraw the map with the interpolated and regression layers
         submitParameters();
@@ -473,11 +473,10 @@ function getUIActions() {
     // When the user clicks reset
     reset.on('click', function (e) {
 
-        console.log("clicked reset");
+        console.log("Clicked reset");
 
         // Call the resetParameters function to redraw the map with the original well points and census tracts
         resetParameters();
-
 
     });
 
