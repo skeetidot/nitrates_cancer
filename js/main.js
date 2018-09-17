@@ -912,7 +912,7 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
             return {
                 color: '#585858', // Stroke Color
                 weight: 0.5, // Stroke Weight
-                fillOpacity: 0.5, // Override the default fill opacity
+                fillOpacity: 0.75, // Override the default fill opacity
                 opacity: 0.5 // Border opacity
             };
         }
@@ -921,7 +921,7 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
 
     // Get the class breaks based on the ckmeans classification method
     var breaks = getRegressionResidualClassBreaks(regressionFeaturesHexbins);
-
+    
     // Loop through each feature, set its symbology, and build and bind its popup
     regressionFeaturesHexbins.eachLayer(function (layer) {
 
@@ -944,6 +944,8 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
     regressionFeaturesHexbins.bringToFront();
 
     // Turn off the interpolation layers
+    map.removeLayer(nitrateRatesIDWLayerGroup);
+    map.removeLayer(joinedCancerNitrateRatesIDWLayerGroup);    
 
     // Draw the legend for the cancer rate hexbins
     drawRegressionResidualsLegend(breaks);
