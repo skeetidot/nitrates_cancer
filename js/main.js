@@ -671,7 +671,7 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
             return {
                 color: '#585858', // Stroke Color
                 weight: 0.5, // Stroke Weight
-                fillOpacity: 0.75, // Override the default fill opacity
+                fillOpacity: 0.6, // Override the default fill opacity
                 opacity: 0.5 // Border opacity
             };
         }
@@ -792,7 +792,7 @@ function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinA
             return {
                 color: '#585858', // Stroke Color
                 weight: 0.5, // Stroke Weight
-                fillOpacity: 0.75, // Override the default fill opacity
+                fillOpacity: 0.6, // Override the default fill opacity
                 opacity: 0.5 // Border opacity
             };
         }
