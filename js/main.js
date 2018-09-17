@@ -21,7 +21,8 @@ var mapboxLight = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.
 var wellPointsLayerGroup = L.layerGroup(),
     censusTractsLayerGroup = L.layerGroup(),
     nitrateRatesIDWLayerGroup = L.layerGroup(),
-    cancerRatesIDWLayerGroup = L.layerGroup();
+    cancerRatesIDWLayerGroup = L.layerGroup(),
+    collectedFeaturesLayerGroup = L.layerGroup();
 
 
 // Initialize global variables for data layers
@@ -33,7 +34,7 @@ var censusTracts,
 
 // Initialize global variables for the distance decay coefficient and hexbin size with default values
 var distanceDecayCoefficient = 2,
-    hexbinArea = 10;
+    hexbinArea = 10; // 10 sq km
 
 
 // Initialize arrays to store the well points, census tracts, interpolated nitrate rates, and interpolated cancer rates
@@ -41,6 +42,14 @@ var wellPointsArray = [],
     censusTractsArray = [],
     interpolatedNitrateRatesArray = [],
     interpolatedCancerRatesArray = [];
+
+
+// Initialize global variables for the Turf.js feature collections
+var censusTractCentroidsTurf,
+    wellPointsFeatureCollection,
+    nitrateRatesHexbinsTurf,
+    cancerRatesGridPointsTurf,
+    collectedFeatures;
 
 
 // Initialize global variables for the layer list and overlays
@@ -70,7 +79,7 @@ var mapOptions = {
     maxZoom: 17,
     maxBounds: L.latLngBounds([40.822448, -80.120168], [48.628936, -100.325876]), // panning bounds so the user doesn't pan too far away from Wisconsin
     bounceAtZoomLimits: false, // Set it to false if you don't want the map to zoom beyond min/max zoom and then bounce back when pinch-zooming
-    layers: [Esri_WorldGrayCanvas, wellPointsLayerGroup, censusTractsLayerGroup, nitrateRatesIDWLayerGroup, cancerRatesIDWLayerGroup] // Set the layers to build into the layer control
+    layers: [Esri_WorldGrayCanvas, wellPointsLayerGroup, censusTractsLayerGroup, nitrateRatesIDWLayerGroup, cancerRatesIDWLayerGroup, collectedFeaturesLayerGroup] // Set the layers to build into the layer control
 };
 
 
@@ -124,7 +133,7 @@ $.getJSON("data/cancer_tracts.json", function (data) {
                 opacity: 1 // border opacity
             };
         }
-        
+
     }).addTo(censusTractsLayerGroup);
 
     // Draw the census tracts
@@ -163,8 +172,6 @@ $.getJSON("data/well_nitrate.json", function (data) {
 // Loop through each tract and:
 // 1. Set its color based on which cluster its cancer rate falls into
 // 2. Build and bind its popup
-// 3. Build a Turf feature collection from the tract centroids
-// 4. Call the interpolateCancerRates() method to interpolate the cancer rates to hexbins
 // Draw the legend
 function drawCensusTracts() {
 
@@ -298,8 +305,6 @@ function drawCancerRatesLegend(breaks) {
 // Loop through each well and:
 // 1. Set its color based on which cluster its nitrate rate falls into
 // 2. Build and bind its popup
-// 3. Build a Turf feature collection from the well points
-// 4. Call the interpolateNitrateRates() method to interpolate the nitrate concentrations to hexbins
 // Draw the legend    
 function drawWellPoints() {
 
@@ -361,7 +366,7 @@ function getNitrateRateClassBreaks(nitrateRatesDataSource) {
 
 // Set the color of the features depending on which cluster the value falls in
 function getNitrateRateColor(d, breaks) {
-    
+
     // If the data value <= the upper value of the first cluster
     if (d <= breaks[0][1]) {
         return '#fef0d9';
@@ -493,7 +498,8 @@ function getUIActions() {
         // Set the overlays to include in the updated layer list
         overlays = {
             "Nitrate Concentrations": nitrateRatesIDWLayerGroup,
-            "Cancer Rates": cancerRatesIDWLayerGroup
+            "Cancer Rates": cancerRatesIDWLayerGroup,
+            "Collected Features": collectedFeaturesLayerGroup
         };
 
         // Rebuild the layer list with the new list of overlays
@@ -504,6 +510,9 @@ function getUIActions() {
 
         // Call the function to interpolate cancer rates and generate a hexbin surface
         interpolateCancerRates(distanceDecayCoefficient, hexbinArea);
+
+        // Call the function to join the hexbins, resulting in a hexbin surface with nitrate concentrations and cancer rates
+        joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinArea);
 
 
     });
@@ -566,9 +575,11 @@ function getUIActions() {
 }
 
 
+// Build a Turf feature collection from the tract centroids
+// Call the interpolateCancerRates() method to interpolate the cancer rates to hexbins
 // Interpolate the cancer rates from the census tracts into a hexbin surface (http://turfjs.org/docs#interpolate)
 function interpolateCancerRates(distanceDecayCoefficient, hexbinArea) {
-    
+
     // Remove any previous features from the layer group    
     if (cancerRatesIDWLayerGroup !== undefined) {
         cancerRatesIDWLayerGroup.clearLayers();
@@ -591,83 +602,23 @@ function interpolateCancerRates(distanceDecayCoefficient, hexbinArea) {
         //console.log(censusTractsFeature);            
 
         // Get the centroid of the census tract
-        var censusTractsFeatureCentroid = turf.centroid(censusTractsFeature, props);
+        var censusTractsCentroidFeature = turf.centroid(censusTractsFeature, props);
 
         // Push the current census tract centroid into an array
-        censusTractsArray.push(censusTractsFeatureCentroid);
+        censusTractsArray.push(censusTractsCentroidFeature);
 
     });
 
-// Create a turf feature collection from the array of census tract centroid features
-var features = turf.featureCollection(censusTractsArray);
-//console.log("Census Tract Centroids Feature Collection:");
-//console.log(features);    
-
-// Set options for the cancer rate interpolation
-var options = {
-    gridType: 'hex', // use hexbins as the grid type
-    property: 'canrate', // interpolate values from the cancer rates
-    units: 'kilometers', // hexbin size units
-    weight: distanceDecayCoefficient // distance decay coefficient, q
-};
-
-// Interpolate the census tract features using a 10 sq km grid size and the options just specified
-var cancerRatesHexbinsTurf = turf.interpolate(features, hexbinArea, options);
-//console.log(cancerRatesHexbinsTurf);
-
-// Loop through each hexbin and get its interpolated cancer rate
-for (var hexbin in cancerRatesHexbinsTurf.features) {
-    var interpolatedCancerRate = cancerRatesHexbinsTurf.features[hexbin].properties.canrate;
-    interpolatedCancerRatesArray.push(interpolatedCancerRate);
-    //console.log(cancerRatesHexbinsTurf.features[hexbin].properties.canrate);
-}
-
-console.log("Cancer Rate Hexbins:");
-console.log(cancerRatesHexbinsTurf);
-
-// Convert the hexbins to a Leaflet GeoJson layer and add it to the map
-cancerRatesHexbins = L.geoJson(cancerRatesHexbinsTurf, {
-
-    // Style the cancer rate hexbins
-    style: function (feature) {
-        return {
-            color: '#585858', // Stroke Color,
-            weight: 0.5, // Stroke Weight
-            fillOpacity: 0.75, // Override the default fill opacity
-            opacity: 0.5 // Border opacity
-        };
-    }
-
-}).addTo(cancerRatesIDWLayerGroup);
-
-// Get the class breaks based on the ckmeans classification method
-var breaks = getCancerRateClassBreaks(cancerRatesHexbins);
-
-// Loop through each feature
-cancerRatesHexbins.eachLayer(function (layer) {
-
-    // Set its color based on the cancer rate
-    layer.setStyle({
-        fillColor: getCancerRateColor(layer.feature.properties.canrate, breaks)
-    });
-
-    // Build the popup for the hexbin
-    var popup = "<b>Cancer Rate: </b>" + (layer.feature.properties.canrate * 100).toFixed(2).toLocaleString() + "% of census tract population";
-
-    // Bind the popup to the hexbin
-    layer.bindPopup(popup);
-
-});
-
-// Move the hexbins to the front
-cancerRatesHexbins.bringToFront();
-
-// Draw the legend for the cancer rate hexbins
-drawCancerRatesLegend(breaks);
+    // Create a turf feature collection from the array of census tract centroid features
+    censusTractCentroidsTurf = turf.featureCollection(censusTractsArray);
+    //console.log("Census Tract Centroids Feature Collection:");
+    //console.log(features);
 
 } // end interpolateCancerRates()
 
 
+// Build a Turf feature collection from the well points
+// Call the interpolateNitrateRates() method to interpolate the nitrate concentrations to hexbins
 // Interpolate the nitrate concentrations from the well points into a hexbin surface (http://turfjs.org/docs#interpolate)
 function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
 
@@ -703,7 +654,7 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
     });
 
     // Create a turf feature collection from the array of well point features
-    var features = turf.featureCollection(wellPointsArray);
+    wellPointsFeatureCollection = turf.featureCollection(wellPointsArray);
     //console.log("Well Points Feature Collection:");
     //console.log(features);
 
@@ -719,8 +670,8 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
         weight: distanceDecayCoefficient // distance decay coefficient, q
     };
 
-    // Interpolate the well point features using a 10 sq km grid size and the options just specified
-    var nitrateRatesHexbinsTurf = turf.interpolate(features, hexbinArea, options);
+    // Interpolate the well point features using the grid size from the hexbinArea variable and the options just specified
+    nitrateRatesHexbinsTurf = turf.interpolate(wellPointsFeatureCollection, hexbinArea, options);
 
     // Loop through each hexbin and get its interpolated nitrate concentration
     for (var hexbin in nitrateRatesHexbinsTurf.features) {
@@ -728,10 +679,6 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
         interpolatedNitrateRatesArray.push(interpolatedNitrateRate);
         //console.log(nitrateRatesHexbinsTurf.features[hexbin].properties.nitr_ran);
     }
-
-    console.log("Nitrate Rate Hexbins:");
-    console.log(nitrateRatesHexbinsTurf);
-
 
     // Convert the hexbins to a Leaflet GeoJson layer and add it to the map
     nitrateRatesHexbins = L.geoJson(nitrateRatesHexbinsTurf, {
@@ -774,3 +721,107 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
     drawNitrateRatesLegend(breaks);
 
 } // end interpolateNitrateRates()
+
+
+// Join the cancer rates from a grid of interpolated cancer rate to the nitrate rate hexbins
+function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinArea) {
+    
+    // Remove any previous features from the layer group    
+    if (collectedFeaturesLayerGroup !== undefined) {
+        collectedFeaturesLayerGroup.clearLayers();
+    }    
+    
+    // Set options for the cancer rate interpolation by grid points
+    var gridOptions = {
+        gridType: 'point', // use points as the grid type, required to use the collect function
+        property: 'canrate', // interpolate values from the cancer rates
+        units: 'kilometers', // hexbin size units
+        weight: distanceDecayCoefficient // distance decay coefficient, q
+    };    
+    
+    // Interpolate the cancer rates centroid into a surface of grid points (http://turfjs.org/docs#interpolate)
+    cancerRatesGridPointsTurf = turf.interpolate(censusTractCentroidsTurf, hexbinArea, gridOptions);        
+    
+    // Use the collect function to join the cancer rates from the cancer rate grid points to the nitrate rate hexbins
+    var collected = turf.collect(nitrateRatesHexbinsTurf, cancerRatesGridPointsTurf, 'canrate', 'values');
+    
+    console.log("Collected Features:");    
+    console.log(collected);    
+
+    // Loop through each of the collected hexbins
+    for (var i in collected.features) {
+        
+        // Get the array of cancer rates for the current hexbin
+        var canrateArray = collected.features[i].properties.values;
+        
+        // Loop through each feature in the cancer rates array and sum them
+        var canrateArraySum = 0;
+        for (var j in canrateArray) {
+            
+            if (canrateArray.length > 0) {
+                canrateArraySum += parseFloat(canrateArray[j]);                
+            }
+
+        }
+        
+        // Get the average cancer rate
+        var canrateArrayAvg = canrateArraySum/canrateArray.length;
+        //console.log("Average: " + canrateArrayAvg);
+        
+        // Add the average cancer rate to the canrate property of the current hexbin
+        if (canrateArrayAvg !== undefined) {
+            collected.features[i].properties['canrate'] = canrateArrayAvg;            
+        }
+        else {
+            collected.features[i].properties['canrate'] = "";
+        }
+
+    }
+    
+    // Convert the census tract centroids to a Leaflet GeoJson layer and add it to the map
+    collectedFeatures = L.geoJson(collected, {
+
+        // Style the census tract centroids
+        style: function (feature) {
+            return {
+                color: '#585858', // Stroke Color
+                weight: 0.5, // Stroke Weight
+                fillOpacity: 0.75, // Override the default fill opacity
+                opacity: 0.5 // Border opacity
+            };
+        }
+
+    }).addTo(collectedFeaturesLayerGroup);    
+
+    
+    // Get the class breaks based on the ckmeans classification method
+    var breaks = getCancerRateClassBreaks(collectedFeatures);
+
+    // Loop through each feature
+    collectedFeatures.eachLayer(function (layer) {
+
+        // Set its color based on the cancer rate
+        layer.setStyle({
+            fillColor: getCancerRateColor(layer.feature.properties.canrate, breaks)
+        });
+
+        // Build the popup for the hexbin
+        var popup = "<b>Cancer Rate: </b>" + (layer.feature.properties.canrate * 100).toFixed(2).toLocaleString() + "% of census tract population";
+
+        // Bind the popup to the hexbin
+        layer.bindPopup(popup);
+
+    });
+
+    // Move the hexbins to the front
+    collectedFeatures.bringToFront();
+
+    // Draw the legend for the cancer rate hexbins
+    drawCancerRatesLegend(breaks);    
+
+    //console.log("Nitrate Rate Hexbins Turf Feature Collection:");
+    //console.log(nitrateRatesHexbinsTurf);
+    //console.log("Collected Feature Collection");
+    //console.log(collected);    
+
+} // end joinCancerRatesToNitrateInterpolation()
