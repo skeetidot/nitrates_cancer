@@ -118,6 +118,14 @@ var sidebar = L.control.sidebar({
 // Open the home tab of the sidebar
 sidebar.open('home');
 
+// Add the easy print plugin to the map
+// Source: https://github.com/rowanwins/leaflet-easyPrint
+L.easyPrint({
+	title: 'Print Map (collapse side panel before printing)',
+	position: 'topleft',
+	sizeModes: ['A4Landscape'],
+    hideClasses: ['#sidebar']
+}).addTo(map);
 
 // Use JQuery's getJSON() method to load the census tract and cancer rate data asynchronously
 $.getJSON("data/cancer_tracts.json", function (data) {
@@ -478,7 +486,7 @@ function getUIActions() {
         // Call the resetParameters function to redraw the map with the original well points and census tracts
         resetParameters();
 
-    });
+    }); 
 
 }
 
@@ -921,7 +929,7 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
 
     // Get the class breaks based on the ckmeans classification method
     var breaks = getRegressionResidualClassBreaks(regressionFeaturesHexbins);
-    
+
     // Loop through each feature, set its symbology, and build and bind its popup
     regressionFeaturesHexbins.eachLayer(function (layer) {
 
@@ -929,11 +937,11 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
         layer.setStyle({
             fillColor: getRegressionResidualColor(layer.feature.properties.residual, breaks)
         });
-        
+
         // Set the most accurately predicted hexbins to 10% opacity, so more of the basemap shows through
         if (getRegressionResidualColor(layer.feature.properties.residual, breaks) == '#f7f7f7') {
             layer.setStyle({
-               fillOpacity: 0.1 
+                fillOpacity: 0.1
             });
         }
 
@@ -952,7 +960,7 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
 
     // Turn off the interpolation layers
     map.removeLayer(nitrateRatesIDWLayerGroup);
-    map.removeLayer(joinedCancerNitrateRatesIDWLayerGroup);    
+    map.removeLayer(joinedCancerNitrateRatesIDWLayerGroup);
 
     // Draw the legend for the cancer rate hexbins
     drawRegressionResidualsLegend(breaks);
@@ -976,7 +984,7 @@ function getRegressionResidualClassBreaks(regressionFeaturesHexbins) {
 
     // Use Simple Statistics to get the standard deviation of the residuals
     var standardDeviation = ss.sampleStandardDeviation(values);
-    
+
     // Create an array of the break points for -2, -1, 0, 1, and 2 standard deviations
     var breaks = [-2 * standardDeviation, -1 * standardDeviation, standardDeviation, 2 * standardDeviation];
     console.log(breaks);
@@ -1040,22 +1048,22 @@ function drawRegressionResidualsLegend(breaks) {
         div.innerHTML +=
             '<span style="background:' + colorMoreThanMinus2StdDev + '"></span> ' +
             '<label>< -2 Std. Dev. (Underprediction)</label>';
-        
+
         div.innerHTML +=
             '<span style="background:' + colorMinus2ToMinus1StdDev + '"></span> ' +
             '<label>-2 Std. Dev. &mdash; -1 Std. Dev.</label>';
-        
+
         div.innerHTML +=
             '<span style="background:' + colorMinus1To1StdDev + '"></span> ' +
             '<label>-1 Std. Dev. &mdash; 1 Std. Dev.</label>';
-        
+
         div.innerHTML +=
             '<span style="background:' + color1To2StdDev + '"></span> ' +
             '<label>1 Std. Dev. &mdash; 2 Std. Dev.</label>';
-        
+
         div.innerHTML +=
             '<span style="background:' + colorMoreThan2StdDev + '"></span> ' +
-            '<label>> 2 Std. Dev. (Overprediction)</label>';             
+            '<label>> 2 Std. Dev. (Overprediction)</label>';
 
         // Return the populated legend div to be added to the map   
         return div;
