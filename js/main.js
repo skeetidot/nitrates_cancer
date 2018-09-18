@@ -910,7 +910,7 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
         // Set a default style for the collected hexbins
         style: function (feature) {
             return {
-                color: '#585858', // Stroke Color
+                color: '#999999', // Stroke Color
                 weight: 0.5, // Stroke Weight
                 fillOpacity: 0.5, // Override the default fill opacity
                 opacity: 0.5 // Border opacity
@@ -929,6 +929,13 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
         layer.setStyle({
             fillColor: getRegressionResidualColor(layer.feature.properties.residual, breaks)
         });
+        
+        // Set the most accurately predicted hexbins to 10% opacity, so more of the basemap shows through
+        if (getRegressionResidualColor(layer.feature.properties.residual, breaks) == '#f7f7f7') {
+            layer.setStyle({
+               fillOpacity: 0.1 
+            });
+        }
 
         // Build the popup for the hexbin
         var popup = "<b>Nitrate Concentration: </b>" + layer.feature.properties.nitr_ran.toFixed(2) + " ppm" + "<br/>" +
