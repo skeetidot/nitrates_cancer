@@ -1,4 +1,4 @@
-/* Define Global Variables */
+// Define Global Variables
 
 // Esri basemap tiles
 var Esri_WorldGrayCanvas = L.tileLayer('http://server.arcgisonline.com/ArcGIS/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}', {
@@ -9,13 +9,6 @@ var Esri_WorldGrayReference = L.tileLayer('http://server.arcgisonline.com/ArcGIS
     attribution: 'Tiles &copy; Esri &mdash; Esri, DeLorme, NAVTEQ'
 });
 
-// Mapbox Light basemap
-var mapboxLight = L.tileLayer('https://api.tiles.mapbox.com/v4/{id}/{z}/{x}/{y}.png?access_token={accessToken}', {
-    attribution: 'Tiles &copy; Mapbox',
-    id: 'mapbox.light',
-    accessToken: 'pk.eyJ1Ijoic2tlZXRpZG90IiwiYSI6ImNqZW5vZ3cxdDEycWwyeW8wbXJndml0aG8ifQ.hDvVg6wvVxGy6xGL9ZBOdw',
-    detectRetina: true
-});
 
 // Initialize layers in global scope, to include them in the layer list
 var wellPointsLayerGroup = L.layerGroup(),
@@ -38,7 +31,7 @@ var distanceDecayCoefficient = 2,
     hexbinArea = 10; // 10 sq km
 
 
-// Initialize arrays to store the well points, census tracts, interpolated nitrate rates, and interpolated cancer rates
+// Initialize arrays to store the well points, census tracts, interpolated nitrate concentrations, and interpolated cancer rates
 var wellPointsArray = [],
     censusTractsArray = [],
     interpolatedNitrateRatesArray = [],
@@ -118,12 +111,13 @@ var sidebar = L.control.sidebar({
 // Open the home tab of the sidebar
 sidebar.open('home');
 
-// Add the easy print plugin to the map
+
+// Add the Leaflet easyPrint plugin to the map
 // Source: https://github.com/rowanwins/leaflet-easyPrint
 L.easyPrint({
-	title: 'Print Map (collapse side panel before printing)',
-	position: 'topleft',
-	sizeModes: ['A4Landscape'],
+    title: 'Print Map (collapse side panel before printing)',
+    position: 'topleft',
+    sizeModes: ['A4Landscape'],
     hideClasses: ['#sidebar']
 }).addTo(map);
 
@@ -154,10 +148,10 @@ $.getJSON("data/cancer_tracts.json", function (data) {
 // Use JQuery's getJSON() method to load the well point and nitrate concentration data asynchronously
 $.getJSON("data/well_nitrate.json", function (data) {
 
-    // CREATE A LEAFLET GEOJSON LAYER FOR THE WELL POINTS WITH POPUPS AND ADD TO THE MAP
+    // Create a Leaflet GeoJson layer for the well points and add it to the well points layer group
     wellPoints = L.geoJson(data, {
 
-        // CREATE STYLING FOR THE WELL POINTS LAYER
+        // Create a style for the well points
         pointToLayer: function (feature, latlng) {
             return L.circleMarker(latlng, {
                 fillColor: '#3d3d3d',
@@ -178,11 +172,12 @@ $.getJSON("data/well_nitrate.json", function (data) {
 
 
 // Draw census tracts, symbolized by cancer rate
-// Get the class breaks based on the ckmeans classification method
+// Get the class breaks based on the ckmeans classification method (https://simplestatistics.org/docs/#ckmeans)
 // Loop through each tract and:
 // 1. Set its color based on which cluster its cancer rate falls into
 // 2. Build and bind its popup
-// Draw the legend
+// 3. Draw the legend
+// 4. Move it to the back of the layer order
 function drawCensusTracts() {
 
     // Get the class breaks based on the ckmeans classification method
@@ -213,7 +208,7 @@ function drawCensusTracts() {
 } // end drawCensusTracts()
 
 
-// Establish classification breaks for cancer rates
+// Establish classification breaks for cancer rates using the ckmeans classification method (https://simplestatistics.org/docs/#ckmeans)
 function getCancerRateClassBreaks(cancerRatesDataSource) {
 
     // Create an empty array to store the cancer rates
@@ -271,7 +266,7 @@ function getCancerRateColor(d, breaks) {
 // Create the legend for cancer rates by census tract  
 function drawCancerRatesLegend(breaks) {
 
-    // Create a new Leaflet control object, and position it bottom left
+    // Create a new Leaflet control object, and position it bottom right
     var legend = L.control({
         position: 'bottomright'
     });
@@ -311,11 +306,11 @@ function drawCancerRatesLegend(breaks) {
 
 
 // Draw well points, symbolized by nitrate concentration
-// Get the class breaks based on the ckmeans classification method
+// Get the class breaks based on the ckmeans classification method (https://simplestatistics.org/docs/#ckmeans)
 // Loop through each well and:
-// 1. Set its color based on which cluster its nitrate rate falls into
+// 1. Set its color based on which cluster its nitrate concentration falls into
 // 2. Build and bind its popup
-// Draw the legend    
+// 3. Draw the legend    
 function drawWellPoints() {
 
     // Get the class breaks based on the ckmeans classification method
@@ -324,7 +319,7 @@ function drawWellPoints() {
     // Loop through each feature, set its symbology, and build and bind its popup
     wellPoints.eachLayer(function (layer) {
 
-        // Set its color based on the nitrate rate
+        // Set its color based on the nitrate concentration
         layer.setStyle({
             fillColor: getNitrateRateColor(layer.feature.properties.nitr_ran, breaks)
         });
@@ -340,23 +335,20 @@ function drawWellPoints() {
     // Draw the legend for the well points
     drawNitrateRatesLegend(breaks);
 
-    // Move the well points to the top of the layer order
-    //wellPoints.bringToFront();
-
 } // end drawWellPoints()
 
 
-// Establish classification breaks for nitrate concentrations
+// Establish classification breaks for nitrate concentrations using the ckmeans classification method (https://simplestatistics.org/docs/#ckmeans)
 function getNitrateRateClassBreaks(nitrateRatesDataSource) {
 
-    // Create an empty array to store the nitrate rates
+    // Create an empty array to store the nitrate concentrations
     var values = [];
 
-    // Loop through each feature to get its nitrate rate
+    // Loop through each feature to get its nitrate concentration
     nitrateRatesDataSource.eachLayer(function (layer) {
         var value = layer.feature.properties.nitr_ran;
 
-        // Push each nitrate rate into the array
+        // Push each nitrate concentration into the array
         values.push(value);
     });
 
@@ -401,10 +393,10 @@ function getNitrateRateColor(d, breaks) {
 } // end getNitrateRateColor()
 
 
-// Create the legend for cancer rates by census tract  
+// Create the legend for nitrate concentrations  
 function drawNitrateRatesLegend(breaks) {
 
-    // Create a new Leaflet control object, and position it bottom left
+    // Create a new Leaflet control object, and position it bottom right
     var legend = L.control({
         position: 'bottomright'
     });
@@ -443,7 +435,7 @@ function drawNitrateRatesLegend(breaks) {
 } // end drawNitrateRatesLegend()
 
 
-// Build the layer list
+// Build the layer list control and add it to the map
 function buildLayerList(overlays) {
 
     // Add the layer control to the map
@@ -457,9 +449,8 @@ function buildLayerList(overlays) {
 
 
 // When the user clicks Submit or Reset
-// 1. Clear the existing layers and legend
-// 2. If Submit is clicked, get the distance decay coefficient and hexbin size and redraw the map with the interpolated and regression layers
-// 3. If Reset is clicked, redraw the map with the original well points and census tracts
+// If Submit is clicked, get the distance decay coefficient and hexbin size and redraw the map with the interpolated nitrate concentrations, cancer rates, and regression residuals
+// If Reset is clicked, redraw the map with the original well points and census tracts
 function getUIActions() {
 
     // Select the submit button
@@ -468,9 +459,9 @@ function getUIActions() {
     // When the user clicks submit
     submit.on('click', function (e) {
 
-        console.log("Clicked submit");
+        console.log("Running interpolation and regression...");
 
-        // Call the submitParameters function to get the distance decay coefficient and hexbin size and redraw the map with the interpolated and regression layers
+        // Call the submitParameters() function to get the distance decay coefficient and hexbin size and redraw the map with the interpolated nitrate concentrations, cancer rates, and regression residuals
         submitParameters();
 
     });
@@ -481,17 +472,18 @@ function getUIActions() {
     // When the user clicks reset
     reset.on('click', function (e) {
 
-        console.log("Clicked reset");
+        console.log("Resetting...");
 
-        // Call the resetParameters function to redraw the map with the original well points and census tracts
+        // Call the resetParameters() function to redraw the map with the original well points and census tracts
         resetParameters();
 
-    }); 
+    });
 
 }
 
 
-// Get the distance decay coefficient and hexbin size and redraw the map with the interpolated and regression layers
+// Get the distance decay coefficient and hexbin size
+// If they are valid, redraw the map, layer list, and legend with the interpolated nitrate concentrations, cancer rates, and regression residuals
 function submitParameters() {
 
     // Remove the current layers from the map
@@ -524,19 +516,20 @@ function submitParameters() {
     hexbinArea = $('#hexbinArea').val();
     hexbinArea = parseFloat(hexbinArea);
 
+    // Show an error popup and reset the map to the original layers and parameter values if the hexbin size is not a number or not between 6 and 90
     if (isNaN(hexbinArea) || hexbinArea < 6 || hexbinArea > 90) {
         window.alert("Enter a hexbin size between 6 and 90");
         $('#hexbinArea').val(10);
         resetParameters();
-        console.log("invalid hexbin size");
         return;
+
+        // Show an error popup and reset the map to the original layers and parameter values if the distance decay coefficient is not a number or not between 0 and 100
     } else if (isNaN(distanceDecayCoefficient) || distanceDecayCoefficient < 0 || distanceDecayCoefficient > 100) {
         window.alert("Enter a distance decay coefficient between 0 and 100");
         $('#distanceDecayCoefficient').val(2);
         resetParameters();
-        console.log("invalid distance decay coefficient");
         return;
-    };
+    }
 
     console.log("Distance Decay Coefficient: " + distanceDecayCoefficient);
     console.log("Hexbin Area: " + hexbinArea);
@@ -557,7 +550,7 @@ function submitParameters() {
     // Rebuild the layer list with the new list of overlays
     buildLayerList(overlays);
 
-    // Call the function to interpolate nitrate rates and generate a hexbin surface
+    // Call the function to interpolate nitrate concentrations and generate a hexbin surface
     interpolateNitrateRates(distanceDecayCoefficient, hexbinArea);
 
     // Call the function to join the hexbins, resulting in a hexbin surface with nitrate concentrations and cancer rates
@@ -566,13 +559,14 @@ function submitParameters() {
 } // end of submitParameters()
 
 
-// Redraw the map with the original well points and census tracts
+// Redraw the map, layer list, and legend with the original well points and census tracts
 function resetParameters() {
 
     // Hide the current legend
     $('.legend').hide();
 
     // Remove the current layers from the map
+
     if (wellPoints !== undefined) {
         wellPoints.remove();
     }
@@ -621,8 +615,8 @@ function resetParameters() {
 
 
 // Build a Turf feature collection from the well points
-// Call the interpolateNitrateRates() method to interpolate the nitrate concentrations to hexbins
 // Interpolate the nitrate concentrations from the well points into a hexbin surface (http://turfjs.org/docs#interpolate)
+// Add the interpolated nitrate concentration hexbins to the map, layer list, and legend
 function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
 
     // Remove any previous features from the layer group    
@@ -639,19 +633,16 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
         var props = layer.feature.properties;
         var coordinates = layer.feature.geometry.coordinates;
 
-        // Create a turf point feature for the well point, with its coordinates and attributes
+        // Create a Turf point feature for the well point, with its coordinates and attributes
         wellPointsFeature = turf.point(coordinates, props);
-        //console.log(wellPointsFeature);
 
         // Push the current well point feature into an array
         wellPointsArray.push(wellPointsFeature);
 
     });
 
-    // Create a turf feature collection from the array of well point features
+    // Create a Turf feature collection from the array of well point features
     wellPointsFeatureCollection = turf.featureCollection(wellPointsArray);
-    //console.log("Well Points Feature Collection:");
-    //console.log(features);
 
     // Set options for the well point interpolation
     var options = {
@@ -661,17 +652,16 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
         weight: distanceDecayCoefficient // distance decay coefficient, q
     };
 
-    // Interpolate the well point features using the grid size from the hexbinArea variable and the options just specified
+    // Interpolate the well point features using the grid size from the hexbinArea variable, the submitted distance decay coefficient, and the options just specified
     nitrateRatesHexbinsTurf = turf.interpolate(wellPointsFeatureCollection, hexbinArea, options);
 
     // Loop through each hexbin and get its interpolated nitrate concentration
     for (var hexbin in nitrateRatesHexbinsTurf.features) {
         var interpolatedNitrateRate = nitrateRatesHexbinsTurf.features[hexbin].properties.nitr_ran;
         interpolatedNitrateRatesArray.push(interpolatedNitrateRate);
-        //console.log(nitrateRatesHexbinsTurf.features[hexbin].properties.nitr_ran);
     }
 
-    // Convert the hexbins to a Leaflet GeoJson layer and add it to the map
+    // Convert the hexbins to a Leaflet GeoJson layer and add it to the Nitrate Concentrations layer group
     nitrateRatesHexbins = L.geoJson(nitrateRatesHexbinsTurf, {
 
         // Style the nitrate concentration hexbins
@@ -692,23 +682,23 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
     // Loop through each feature, set its symbology, and build and bind its popup
     nitrateRatesHexbins.eachLayer(function (layer) {
 
-        // Set its color based on the cancer rate
+        // Set its color based on the nitrate concentration
         layer.setStyle({
             fillColor: getNitrateRateColor(layer.feature.properties.nitr_ran, breaks)
         });
 
-        // Build the popup for the hexbin
+        // Build the popup for the feature
         var popup = "<b>Nitrate Concentration: </b>" + layer.feature.properties.nitr_ran.toFixed(2) + " ppm";
 
-        // Bind the popup to the hexbin
+        // Bind the popup to the feature
         layer.bindPopup(popup);
 
     });
 
-    // Move the hexbins to the front
+    // Move the nitrate concentration hexbins to the front
     nitrateRatesHexbins.bringToFront();
 
-    // Draw the legend for the nitrate rate hexbins
+    // Draw the legend for the nitrate concentration hexbins
     drawNitrateRatesLegend(breaks);
 
 } // end interpolateNitrateRates()
@@ -716,10 +706,12 @@ function interpolateNitrateRates(distanceDecayCoefficient, hexbinArea) {
 
 // Build a Turf feature collection from census tract centroids
 // Interpolate the cancer rates from the census tract centroids to grid points
-// Join the cancer rates from a grid of interpolated cancer rate to the nitrate rate hexbins
+// Use the collect method to join the cancer rates from the interpolated grid points to the nitrate concentration hexbins
+// Add the joined nitrate and cancer rate hexbins (symbolized by cancer rate) to the map, layer list, and legend
+// Call the function to run the linear regression
 function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinArea) {
 
-    // Remove any previous features from the layer group    
+    // Remove any previous features from the joined hexbins layer group    
     if (joinedCancerNitrateRatesIDWLayerGroup !== undefined) {
         joinedCancerNitrateRatesIDWLayerGroup.clearLayers();
     }
@@ -731,12 +723,8 @@ function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinA
         var props = layer.feature.properties;
         var coordinates = layer.feature.geometry.coordinates;
 
-        //console.log("Census Tract Coordinates:")
-        //console.log(coordinates);
-
-        // Create a turf polygon feature for the census tract, with its coordinates and attributes
+        // Create a Turf polygon feature for the census tract, with its coordinates and attributes
         censusTractsFeature = turf.polygon(coordinates, props);
-        //console.log(censusTractsFeature);            
 
         // Get the centroid of the census tract
         var censusTractsCentroidFeature = turf.centroid(censusTractsFeature, props);
@@ -746,7 +734,7 @@ function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinA
 
     });
 
-    // Create a turf feature collection from the array of census tract centroid features
+    // Create a Turf feature collection from the array of census tract centroid features
     censusTractCentroidsTurf = turf.featureCollection(censusTractsArray);
 
     // Set options for the cancer rate interpolation by grid points
@@ -757,15 +745,16 @@ function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinA
         weight: distanceDecayCoefficient // distance decay coefficient, q
     };
 
-    // Interpolate the cancer rates centroid into a surface of grid points (http://turfjs.org/docs#interpolate)
+    // Interpolate the cancer rate centroids into a surface of grid points (http://turfjs.org/docs#interpolate)
     cancerRatesGridPointsTurf = turf.interpolate(censusTractCentroidsTurf, hexbinArea, gridOptions);
 
-    // Use the collect function to join the cancer rates from the cancer rate grid points to the nitrate rate hexbins
-    var collectedFeaturesHexbinsTurf = turf.collect(nitrateRatesHexbinsTurf, cancerRatesGridPointsTurf, 'canrate', 'values');
+    // Use the collect function to join the cancer rates from the cancer rate grid points to the nitrate concentration hexbins (http://turfjs.org/docs/#collect)
+    collectedFeaturesHexbinsTurf = turf.collect(nitrateRatesHexbinsTurf, cancerRatesGridPointsTurf, 'canrate', 'values');
 
     // Loop through each of the collected hexbins
     for (var i in collectedFeaturesHexbinsTurf.features) {
 
+        // The collect function builds an array of cancer rates for features intersecting the current hexbin
         // Get the array of cancer rates for the current hexbin
         var canrateArray = collectedFeaturesHexbinsTurf.features[i].properties.values;
 
@@ -779,9 +768,8 @@ function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinA
 
         }
 
-        // Get the average cancer rate
+        // Get the average cancer rate (sum / number of features in the array)
         var canrateArrayAvg = canrateArraySum / canrateArray.length;
-        //console.log("Average: " + canrateArrayAvg);
 
         // Add the average cancer rate to the canrate property of the current hexbin
         if (canrateArrayAvg !== undefined) {
@@ -792,7 +780,7 @@ function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinA
 
     }
 
-    // Convert the collected hexbins to a Leaflet GeoJson layer and add it to the map
+    // Convert the collected hexbins to a Leaflet GeoJson layer and add it to the cancer rates layer group
     collectedFeaturesHexbins = L.geoJson(collectedFeaturesHexbinsTurf, {
 
         // Set a default style for the collected hexbins
@@ -818,40 +806,35 @@ function joinCancerRatesToNitrateInterpolation(distanceDecayCoefficient, hexbinA
             fillColor: getCancerRateColor(layer.feature.properties.canrate, breaks)
         });
 
-        // Build the popup for the hexbin
+        // Build the popup for the feature
         var popup = "<b>Cancer Rate: </b>" + (layer.feature.properties.canrate * 100).toFixed(2).toLocaleString() + "% of census tract population";
 
-        // Bind the popup to the hexbin
+        // Bind the popup to the feature
         layer.bindPopup(popup);
 
     });
 
-    // Move the hexbins to the front
+    // Move the cancer rate hexbins to the front
     collectedFeaturesHexbins.bringToFront();
 
     // Draw the legend for the cancer rate hexbins
     drawCancerRatesLegend(breaks);
 
-    // Call the function to calculate linear regression
-    calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea);
-
-    //console.log("Nitrate Rate Hexbins Turf Feature Collection:");
-    //console.log(nitrateRatesHexbinsTurf);
-    //console.log("Collected Feature Collection");
-    //console.log(collectedFeaturesHexbinsTurf);    
+    // Call the function to calculate linear regression using the joined hexbins
+    calculateLinearRegression(collectedFeaturesHexbinsTurf);
 
 } // end joinCancerRatesToNitrateInterpolation()
 
 
 // Calculate a linear regression where x is the nitrate concentration and y is the cancer rate
 // Use the resulting slope (m) and y-intercept (b) to calculate the predicted cancer rate for each hexbin, and the residual (predicted rate - observed rate)
-function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
+// Add the linear regression hexbins to the map, symbolized based on the standard deviation of their residuals
+function calculateLinearRegression(collectedFeaturesHexbinsTurf) {
 
     // Remove any previous features from the layer group    
     if (regressionResidualsLayerGroup !== undefined) {
         regressionResidualsLayerGroup.clearLayers();
     }
-
 
     // Loop through the hexbin layer with nitrate concentrations and cancer rates
     // Create a two-dimensional array of [x, y] pairs where x is the nitrate concentration and y is the cancer rate
@@ -874,45 +857,40 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
 
     }
 
-    //console.log(interpolatedNitrateAndCancerRatesArray);
-
     // Run the linearRegression method from the Simple Statistics library to return an object containing the slope and intercept of the linear regression line
     // where nitrate concentration is the independent variable (x) and cancer rate is the dependent variable (y)
     // The object returns m (slope) and b (y-intercept) that can be used to predict cancer rates (y) using the equation, y = mx + b
     var regressionEquation = ss.linearRegression(interpolatedNitrateAndCancerRatesArray);
-    console.log(regressionEquation);
 
     // Create variables for the slope and y-intercept
     var m = regressionEquation.m;
     var b = regressionEquation.b;
 
+    console.log("Regression Equation: y = " + m + "x + " + b);
+
     // Loop through each of the collected hexbins
-    for (var i in collectedFeaturesHexbinsTurf.features) {
+    for (var j in collectedFeaturesHexbinsTurf.features) {
 
         // Create a shorthand variable to access the layer properties
-        var props = collectedFeaturesHexbinsTurf.features[i].properties;
+        var collectedFeatureHexbinProps = collectedFeaturesHexbinsTurf.features[j].properties;
 
         // Create variables to store the interpolated nitrate concentration and cancer rate
-        var interpolatedNitrateConcentration = props.nitr_ran;
-        var interpolatedCancerRate = props.canrate;
+        var collectedHexbinInterpolatedNitrateConcentration = collectedFeatureHexbinProps.nitr_ran;
+        var collectedHexbinInterpolatedCancerRate = collectedFeatureHexbinProps.canrate;
 
-        // Use the slope and y-intercept from the regression equation to calculate the predicted cancer rate from the interpolate nitrate concentration
-        var predictedCancerRate = m * (parseFloat(interpolatedNitrateConcentration)) + b;
+        // Use the slope and y-intercept from the regression equation to calculate the predicted cancer rate from the interpolated nitrate concentration
+        var predictedCancerRate = m * (parseFloat(collectedHexbinInterpolatedNitrateConcentration)) + b;
 
         // Calculate the residual (predictedCancerRate - interpolatedCancerRate)
-        var residual = predictedCancerRate - interpolatedCancerRate;
+        var residual = predictedCancerRate - collectedHexbinInterpolatedCancerRate;
 
-        collectedFeaturesHexbinsTurf.features[i].properties.predictedCancerRate = predictedCancerRate;
-        //console.log(predictedCancerRate);
-
-        collectedFeaturesHexbinsTurf.features[i].properties.residual = residual;
-        //console.log(residual);
+        // Add the predicted cancer rate and residual to the collected hexbin
+        collectedFeaturesHexbinsTurf.features[j].properties.predictedCancerRate = predictedCancerRate;
+        collectedFeaturesHexbinsTurf.features[j].properties.residual = residual;
 
     }
 
-    console.log(collectedFeaturesHexbinsTurf);
-
-    // Convert the collected hexbins to a Leaflet GeoJson layer and add it to the map
+    // Convert the collected hexbins to a Leaflet GeoJson layer and add it to the regression residuals layer group
     regressionFeaturesHexbins = L.geoJson(collectedFeaturesHexbinsTurf, {
 
         // Set a default style for the collected hexbins
@@ -933,7 +911,7 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
     // Loop through each feature, set its symbology, and build and bind its popup
     regressionFeaturesHexbins.eachLayer(function (layer) {
 
-        // Set its color based on the cancer rate
+        // Set its color based on the residual between the predicted and observed cancer rate
         layer.setStyle({
             fillColor: getRegressionResidualColor(layer.feature.properties.residual, breaks)
         });
@@ -945,30 +923,30 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf, hexbinArea) {
             });
         }
 
-        // Build the popup for the hexbin
+        // Build the popup for the feature
         var popup = "<b>Nitrate Concentration: </b>" + layer.feature.properties.nitr_ran.toFixed(2) + " ppm" + "<br/>" +
             "<b>Observed Cancer Rate: </b>" + (layer.feature.properties.canrate * 100).toFixed(2).toLocaleString() + "% of census tract population" + "<br/>" +
-            "<b>Predicted Cancer Rate: </b>" + (layer.feature.properties.predictedCancerRate * 100).toFixed(2).toLocaleString() + "% of census tract population" + "<br/>";
+            "<b>Predicted Cancer Rate: </b>" + (layer.feature.properties.predictedCancerRate * 100).toFixed(2).toLocaleString() + "% of census tract population";
 
-        // Bind the popup to the hexbin
+        // Bind the popup to the feature
         layer.bindPopup(popup);
 
     });
 
-    // Move the hexbins to the front
+    // Move the regression residuals to the front
     regressionFeaturesHexbins.bringToFront();
 
     // Turn off the interpolation layers
     map.removeLayer(nitrateRatesIDWLayerGroup);
     map.removeLayer(joinedCancerNitrateRatesIDWLayerGroup);
 
-    // Draw the legend for the cancer rate hexbins
+    // Draw the legend for the regression residuals
     drawRegressionResidualsLegend(breaks);
 
 } // end calculateLinearRegression()
 
 
-// Establish classification breaks for regression residuals
+// Establish classification breaks for regression residuals, based on their standard deviation (https://simplestatistics.org/docs/#standarddeviation)
 function getRegressionResidualClassBreaks(regressionFeaturesHexbins) {
 
     // Create an empty array to store the residuals
@@ -978,16 +956,17 @@ function getRegressionResidualClassBreaks(regressionFeaturesHexbins) {
     regressionFeaturesHexbins.eachLayer(function (layer) {
         var value = layer.feature.properties.residual;
 
-        // Push each cancer rate into the array
+        // Push each residual into the array
         values.push(value);
     });
 
-    // Use Simple Statistics to get the standard deviation of the residuals
+    // Use Simple Statistics to get the standard deviation of the residuals (https://simplestatistics.org/docs/#standarddeviation)
     var standardDeviation = ss.sampleStandardDeviation(values);
 
     // Create an array of the break points for -2, -1, 0, 1, and 2 standard deviations
     var breaks = [-2 * standardDeviation, -1 * standardDeviation, standardDeviation, 2 * standardDeviation];
-    console.log(breaks);
+
+    console.log("Standard Deviation of Residuals: " + standardDeviation);
 
     // Return the array of class breaks
     return breaks;
@@ -1025,7 +1004,7 @@ function getRegressionResidualColor(d, breaks) {
 // Create the legend for regression residuals
 function drawRegressionResidualsLegend(breaks) {
 
-    // Create a new Leaflet control object, and position it bottom left
+    // Create a new Leaflet control object, and position it bottom right
     var legend = L.control({
         position: 'bottomright'
     });
