@@ -113,6 +113,11 @@ var sidebar = L.control.sidebar({
 sidebar.open('home');
 
 
+// Hide the regression equation and r-squared labels in the sidebar
+$('#regressionEquationLabel').hide();
+$('#rSquaredLabel').hide();
+
+
 // Add the Leaflet easyPrint plugin to the map
 // Source: https://github.com/rowanwins/leaflet-easyPrint
 L.easyPrint({
@@ -121,6 +126,7 @@ L.easyPrint({
     sizeModes: ['A4Landscape'],
     hideClasses: ['#sidebar']
 }).addTo(map);
+
 
 // Use JQuery's getJSON() method to load the census tract and cancer rate data asynchronously
 $.getJSON("data/cancer_tracts.json", function (data) {
@@ -477,6 +483,12 @@ function getUIActions() {
 
         // Call the resetParameters() function to redraw the map with the original well points and census tracts
         resetParameters();
+
+        // Hide the regression equation and r-squared labels and values in the sidebar
+        $('#regressionEquationLabel').hide();
+        $('#regressionEquation').hide();
+        $('#rSquaredLabel').hide();
+        $('#rSquared').hide();        
 
     });
 
@@ -866,8 +878,9 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf) {
     // Create variables for the slope and y-intercept
     var m = regressionEquation.m;
     var b = regressionEquation.b;
-
-    console.log("Regression Equation: y = " + m + "x + " + b);
+    
+    var regressionEquationFormatted = "y = " + parseFloat(m).toFixed(5) + "x + " + parseFloat(b).toFixed(5);
+    console.log("Regression Equation: " + regressionEquationFormatted);
 
     // Loop through each of the collected hexbins
     for (var j in collectedFeaturesHexbinsTurf.features) {
@@ -904,8 +917,22 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf) {
     var regressionLine = ss.linearRegressionLine(regressionEquation);
     
     // Calculate the r-squared
-    var rSquared = ss.rSquared(observedNitrateAndCancerRatesArray, regressionLine); // = 1 this line is a perfect fit
+    var rSquared = parseFloat(ss.rSquared(observedNitrateAndCancerRatesArray, regressionLine)).toFixed(5); // 1 is a perfect fit, 0 indicates no correlation
     console.log("r-Squared: " + rSquared);
+    
+    // Show the regression equation and r-squared labels and values in the sidebar
+    $('#regressionEquationLabel').show();
+    $('#regressionEquation').show();
+    $('#rSquaredLabel').show();    
+    $('#rSquared').show();
+    
+    // Select the regression equation inside the regressionEquation div element's span tag and update it to the calculated regression equation
+    var regressionEquationDiv = $('#regressionEquation');
+    regressionEquationDiv.html(regressionEquationFormatted);
+    
+    // Select the r-squared inside the regressionEquation div element's span tag
+    var rSquaredDiv = $('#rSquared');
+    rSquaredDiv.html(rSquared);
 
     // Convert the collected hexbins to a Leaflet GeoJson layer and add it to the regression residuals layer group
     regressionFeaturesHexbins = L.geoJson(collectedFeaturesHexbinsTurf, {
@@ -983,7 +1010,7 @@ function getRegressionResidualClassBreaks(regressionFeaturesHexbins) {
     // Create an array of the break points for -2, -1, 0, 1, and 2 standard deviations
     var breaks = [-2 * standardDeviation, -1 * standardDeviation, standardDeviation, 2 * standardDeviation];
 
-    console.log("Standard Deviation of Residuals: " + standardDeviation);
+    console.log("Standard Deviation of Residuals: " + parseFloat(standardDeviation).toFixed(5));
 
     // Return the array of class breaks
     return breaks;

@@ -54,6 +54,23 @@ p {
 }
 
 
+/**********************************************************************/
+
+/* CSS FOR THE REGRESSION EQUATION AND R-SQUARED LABELS */
+
+#regressionEquationLabel {
+    font-size: 1.25em;
+    font-weight: bold;
+    margin-top: 10px; 
+}
+
+#rSquaredLabel {
+    font-size: 1.25em;
+    font-weight: bold;
+    margin-top: 10px;   
+}
+
+
 /************************************************************/
 
 /* CSS RELATED TO THE LEGEND */
