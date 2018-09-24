@@ -31,11 +31,12 @@ var distanceDecayCoefficient = 2,
     hexbinArea = 10; // 10 sq km
 
 
-// Initialize arrays to store the well points, census tracts, interpolated nitrate concentrations, and interpolated cancer rates
+// Initialize arrays to store the well points, census tracts, interpolated nitrate concentrations, interpolated cancer rates, and predicted and observed cancer rates
 var wellPointsArray = [],
     censusTractsArray = [],
     interpolatedNitrateRatesArray = [],
-    interpolatedNitrateAndCancerRatesArray = [];
+    interpolatedNitrateAndCancerRatesArray = [],
+    observedNitrateAndCancerRatesArray = [];
 
 
 // Initialize global variables for the Turf.js feature collections
@@ -873,7 +874,7 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf) {
 
         // Create a shorthand variable to access the layer properties
         var collectedFeatureHexbinProps = collectedFeaturesHexbinsTurf.features[j].properties;
-
+        
         // Create variables to store the interpolated nitrate concentration and cancer rate
         var collectedHexbinInterpolatedNitrateConcentration = collectedFeatureHexbinProps.nitr_ran;
         var collectedHexbinInterpolatedCancerRate = collectedFeatureHexbinProps.canrate;
@@ -887,8 +888,24 @@ function calculateLinearRegression(collectedFeaturesHexbinsTurf) {
         // Add the predicted cancer rate and residual to the collected hexbin
         collectedFeaturesHexbinsTurf.features[j].properties.predictedCancerRate = predictedCancerRate;
         collectedFeaturesHexbinsTurf.features[j].properties.residual = residual;
+        
+        // Build an array of the observed nitrate concentration and cancer rate for the current feature
+        var observedNitrateAndCancerRatesPair = [collectedHexbinInterpolatedNitrateConcentration, collectedHexbinInterpolatedCancerRate];
+        
+        // Push the current nitrate concentration and cancer rate pair into an array
+        observedNitrateAndCancerRatesArray.push(observedNitrateAndCancerRatesPair);
 
     }
+    
+    // Calculate the r-squared for the regression (https://simplestatistics.org/docs/#rsquared)
+    // The function requires a linear regression line (https://simplestatistics.org/docs/#linearregressionline) and an array of nitrate concentration and cancer rate pairs
+    
+    // Build the linear regression line from the regression equation
+    var regressionLine = ss.linearRegressionLine(regressionEquation);
+    
+    // Calculate the r-squared
+    var rSquared = ss.rSquared(observedNitrateAndCancerRatesArray, regressionLine); // = 1 this line is a perfect fit
+    console.log("r-Squared: " + rSquared);
 
     // Convert the collected hexbins to a Leaflet GeoJson layer and add it to the regression residuals layer group
     regressionFeaturesHexbins = L.geoJson(collectedFeaturesHexbinsTurf, {
