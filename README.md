@@ -8,3 +8,5 @@ To examine a possible correlation between nitrate concentrations and cancer rate
 The distance decay coefficient (q) is an exponent in the formula which determines how quickly the weight of a sampled value will decrease the further away it is from the unsampled location. The larger the distance decay coefficient, the quicker the weight of a sampled value decreases as its distance from the unsampled location increases. The distance decay coefficient can be 0 or higher, but it is typically between 1.5 and 2.5.
 
 The hexbin size represents the area of the hexbin in square kilometers and determines the level of detail to use for the analysis. Smaller hexbins are more detailed, but take longer to process.
+
+View a demo of the application at https://www.youtube.com/watch?v=GV7zcDyoy7U&t=75s.
