@@ -9,6 +9,4 @@ The distance decay coefficient (q) is an exponent in the formula which determine
 
 The hexbin size represents the area of the hexbin in square kilometers and determines the level of detail to use for the analysis. Smaller hexbins are more detailed, but take longer to process.
 
-View a demo of the application at https://www.youtube.com/watch?v=GV7zcDyoy7U&t=75s.
-
 View a demo of the application at <a href="https://www.youtube.com/watch?v=GV7zcDyoy7U" target="_blank">https://www.youtube.com/watch?v=GV7zcDyoy7U</a>.
