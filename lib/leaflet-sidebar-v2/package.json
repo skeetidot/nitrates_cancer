@@ -18,10 +18,7 @@
     "Norwin <noerw@gmx.de> (http://github.com/noerw)",
     "Nick Peihl <nickpeihl@gmail.com>"
   ],
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/nickpeihl/leaflet-sidebar-v2.git"
-  },
+  "repository": "https://github.com/nickpeihl/leaflet-sidebar-v2.git",
   "devDependencies": {
     "gulp": "^3.9.1",
     "gulp-clean-css": "^3.9.0",
@@ -45,9 +42,9 @@
     "braces": "^3.0.2",
     "clean-css": "^4.2.1",
     "cryptiles": "^4.1.3",
-    "lodash": "^4.17.14",
+    "lodash": "4.17.13",
     "lodash.template": "^4.5.0",
-    "minimatch": "^3.0.4",
+    "minimatch": "3.0.2",
     "randomatic": "^3.1.1"
   }
 }
